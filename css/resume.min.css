@@ -9,7 +9,9 @@ body{
     padding-top:54px;
     color:#868e96
 }
-
+article{
+        width:80%;
+}
 #cv {
     
 }
@@ -73,6 +75,13 @@ h2{
     text-transform:uppercase;
     font-weight:500;
     font-family:'Saira Extra Condensed',serif;font-size:1.35rem
+}
+
+.subheadingLink{
+    text-transform:uppercase;
+    font-weight:500;
+    font-family:'Saira Extra Condensed',serif;font-size:1.35rem;    
+    color: #890c5e;
 }
 
 .list-social-icons a{
