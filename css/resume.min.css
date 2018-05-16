@@ -12,9 +12,11 @@ body{
 article{
         width:80%;
 }
-#cv {
-    
+.cv {
+    color:#890c5e;
+
 }
+
 .subheadingLink{
     text-transform:uppercase;
     font-weight:500;
@@ -22,7 +24,17 @@ article{
     font-size:1.35rem;    
     color: #890c5e;
 }
+
+
+.success{
+    color:#890c5e;
+    font-weight: bold; 
+    
+}
+
 /*FORM*/
+
+
 
 .form-control {
     border-radius: 0;
