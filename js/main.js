@@ -53,8 +53,6 @@
   }
 
   // --- XP bar, level, achievements ----------------------------------------
-  var lvl = document.getElementById('lvl');
-  var bar = document.getElementById('xpbar');
   var toast = document.getElementById('toast');
   var toastTimer;
 
@@ -67,11 +65,6 @@
 
   function onScroll() {
     scrollY = window.scrollY;
-    var max = document.documentElement.scrollHeight - window.innerHeight;
-    var p = max > 0 ? Math.min(scrollY / max, 1) : 0;
-    bar.style.width = (p * 100) + '%';
-    lvl.textContent = 1 + Math.floor(p * 9); // levels 1..10
-    if (p > 0.985) document.dispatchEvent(new CustomEvent('unlock', { detail: 'maxlevel' }));
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
@@ -120,11 +113,23 @@
     panel.hidden = !open;
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
-  btn.addEventListener('click', function (e) { e.stopPropagation(); setPanel(panel.hidden); });
+  var burger = document.getElementById('burger');
+  var nav = document.getElementById('hud-nav');
+  function setNav(open) {
+    nav.classList.toggle('open', open);
+    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) setPanel(false);
+  }
+  burger.addEventListener('click', function (e) { e.stopPropagation(); setNav(!nav.classList.contains('open')); });
+  nav.addEventListener('click', function (e) { if (e.target.tagName === 'A') setNav(false); });
+  btn.addEventListener('click', function (e) { e.stopPropagation(); if (panel.hidden) setNav(false); setPanel(panel.hidden); });
+  document.addEventListener('click', function (e) {
+    if (nav.classList.contains('open') && !nav.contains(e.target)) setNav(false);
+  });
   document.addEventListener('click', function (e) {
     if (!panel.hidden && !panel.contains(e.target)) setPanel(false);
   });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setPanel(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { setPanel(false); setNav(false); } });
 
   var astro = document.getElementById('astro');
   var pokes = 0;
@@ -258,7 +263,8 @@
     else { what = 'side quest time'; state = 'quest'; }
     var astro = document.getElementById('astro');
     if (astro && !astro.hasAttribute('data-annoyed')) astro.setAttribute('data-state', state);
-    if (state === 'sleep' && !q.get('time')) document.dispatchEvent(new CustomEvent('unlock', { detail: 'nightowl' }));
+    var local = /^(localhost|127\.0\.0\.1|\[::1\])?$/.test(window.location.hostname); // '' = file://
+    if (state === 'sleep' && (!q.get('time') || local)) document.dispatchEvent(new CustomEvent('unlock', { detail: 'nightowl' }));
     el.textContent = 'Status: ' + what + ' · ' + hh + ':' + mm + ' in Belgium';
   }
   update();

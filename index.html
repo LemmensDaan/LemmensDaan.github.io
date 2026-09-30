@@ -16,7 +16,7 @@
 
   <header class="hud">
     <a class="hud-brand" href="#top">DL<span>//</span>CV</a>
-    <nav class="hud-nav" aria-label="Sections">
+    <nav class="hud-nav" id="hud-nav" aria-label="Sections">
       <a href="#log">Mission log</a>
       <a href="#quests">Side quests</a>
       <a href="#skills">Skill tree</a>
@@ -24,19 +24,15 @@
       <a href="#contact">Contact</a>
     </nav>
     <button class="hud-achv" id="achv-btn" type="button" aria-expanded="false" aria-controls="achv-panel" title="Achievements">&#9733; <span id="achv-n">0</span>/<span id="achv-total">6</span></button>
-    <div class="hud-xp" title="Scroll to gain XP">
-      <span class="lvl">LVL <b id="lvl">1</b></span>
-      <span class="bar"><i id="xpbar"></i></span>
-    </div>
+    <button class="hud-burger" id="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="hud-nav"><span></span><span></span><span></span></button>
   </header>
 
   <div id="achv-panel" class="achv-panel" hidden>
     <h2>Achievements</h2>
     <ul class="achv-grid">
         <li data-id="explorer"><b>Cartographer</b><span>Visit every section of the page</span></li>
-        <li data-id="maxlevel"><b>Max level</b><span>Scroll all the way to level 10</span></li>
         <li data-id="cv"><b>Recruiter's choice</b><span>Download my CV</span></li>
-        <li data-id="message"><b>Golden Record</b><span>Send me a message, Voyager style</span></li>
+        <li data-id="message"><b>Phone Home</b><span>Send me a message, like Voyager's Golden Record</span></li>
         <li data-id="review"><b>Critic</b><span>Review the page</span></li>
         <li data-id="hello"><b>Houston, we have contact</b><span>Say hello to the astronaut</span></li>
         <li data-id="poke"><b>Personal space</b><span>Keep poking the astronaut until he floats away</span></li>
@@ -285,7 +281,6 @@
           <p class="status" role="status"></p>
         </form>
       </div>
-      <p class="foot">Psst: there's a secret hidden somewhere on this page.</p>
     </section>
   </main>
 
