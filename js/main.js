@@ -222,21 +222,42 @@
   });
 
   // Touch version: swipes stand in for the arrow keys, and the last two taps for B and A.
-  var t0 = null;
+  // Phone browsers often fire touchcancel (not touchend) once they start scrolling,
+  // so the gesture is finished from the last touchmove position on either event.
+  var dbg = null;
+  if (/[?&]debug/.test(window.location.search)) {
+    dbg = document.createElement('div');
+    dbg.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;padding:6px 10px;border-radius:6px;background:#000c;color:#3fe0c5;font:12px monospace;pointer-events:none';
+    document.body.appendChild(dbg);
+  }
+  function report(what) { if (dbg) dbg.textContent = what + ' | step ' + pos + '/' + code.length; }
+
+  var t0 = null, last = null;
   document.addEventListener('touchstart', function (e) {
-    t0 = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null;
+    if (e.touches.length !== 1) { t0 = null; return; }
+    t0 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    last = t0;
   }, { passive: true });
-  document.addEventListener('touchend', function (e) {
+  document.addEventListener('touchmove', function (e) {
+    if (t0 && e.touches.length === 1) last = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, { passive: true });
+
+  function finish() {
     if (!t0) return;
-    var t = e.changedTouches[0], dx = t.clientX - t0.x, dy = t.clientY - t0.y;
+    var dx = last.x - t0.x, dy = last.y - t0.y;
     t0 = null;
-    var ax = Math.abs(dx), ay = Math.abs(dy);
-    if (Math.max(ax, ay) < 10) { // tap: only counts for the final B, A
+    var ax = Math.abs(dx), ay = Math.abs(dy), d = Math.max(ax, ay);
+    if (d < 12) { // tap: only counts for the final B, A
       if (pos >= 8) feed(pos === 8 ? 'b' : 'a');
-    } else if (Math.max(ax, ay) >= 50) {
-      feed(ay > ax ? (dy < 0 ? 'ArrowUp' : 'ArrowDown') : (dx < 0 ? 'ArrowLeft' : 'ArrowRight'));
+      report('tap');
+    } else if (d >= 30) {
+      var dir = ay > ax ? (dy < 0 ? 'ArrowUp' : 'ArrowDown') : (dx < 0 ? 'ArrowLeft' : 'ArrowRight');
+      feed(dir);
+      report(dir.replace('Arrow', 'swipe '));
     }
-  }, { passive: true });
+  }
+  document.addEventListener('touchend', finish, { passive: true });
+  document.addEventListener('touchcancel', finish, { passive: true });
 })();
 
 // --- Contact + feedback forms (FormSubmit, no backend) ----------------------
@@ -304,4 +325,106 @@
   }
   update();
   setInterval(update, 30000);
+})();
+
+// --- Decode-on-load: header and hero text start as Aurebesh, then flip to English --------
+(function () {
+  'use strict';
+  var root = document.documentElement;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function ready() { root.classList.add('ready'); }
+  if (reduce || !document.fonts || !window.Promise) { ready(); return; }
+
+  var SEL = '.hud-brand, .hud-nav a, .hero-text .kicker, .hero-text h1, .hero-text .role, .hero-text .lead, .hero-text .btn, .hero .tag';
+  var fonts = Promise.all([document.fonts.ready, document.fonts.load('16px Aurebesh')]);
+  Promise.race([fonts, new Promise(function (r) { setTimeout(r, 2000); })]).then(start, start);
+
+  function start() {
+    var items = [], roots = [];
+    document.querySelectorAll(SEL).forEach(function (el) {
+      if (!el.getClientRects().length) return; // e.g. the nav links inside a closed mobile menu
+      var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach(function (n) {
+        var txt = n.nodeValue;
+        if (!txt.trim()) return;
+        var wrap = document.createElement('span');
+        txt.split(/(\s+)/).forEach(function (tok) {
+          if (!tok) return;
+          if (/^\s+$/.test(tok)) { wrap.appendChild(document.createTextNode(tok)); return; }
+          var w = document.createElement('span');
+          w.className = 'dw';
+          w.textContent = tok;
+          wrap.appendChild(w);
+          items.push({ el: w, text: tok, k: 0 });
+        });
+        n.parentNode.replaceChild(wrap, n);
+        roots.push({ wrap: wrap, text: txt });
+      });
+    });
+
+    // measure every word in English first, then lock its width so nothing jumps while it flips
+    items.forEach(function (it) { it.w = it.el.getBoundingClientRect().width; });
+    var total = 0;
+    items.forEach(function (it) {
+      it.el.style.width = it.w + 'px';
+      it.el.textContent = '';
+      it.d = document.createElement('span');
+      it.p = document.createElement('span');
+      it.p.className = 'p';
+      it.el.appendChild(it.d);
+      it.el.appendChild(it.p);
+      setPending(it.p, it.text);
+      total += it.text.length;
+    });
+    // Aurebesh glyphs are wider and taller than the Latin ones: shrink each word to fit its English width
+    // (punctuation stays in the normal font at full size, so only the letters are scaled)
+    items.forEach(function (it) {
+      it.pw = it.p.getBoundingClientRect().width;
+      it.lw = 0;
+      it.p.querySelectorAll('.a').forEach(function (a) { it.lw += a.getBoundingClientRect().width; });
+    });
+    items.forEach(function (it) {
+      var sc = (it.lw > 0 && it.pw > it.w) ? (it.w - (it.pw - it.lw)) / it.lw : 1;
+      it.p.style.setProperty('--s', Math.min(1, Math.max(sc, 0.4)));
+    });
+    ready();
+
+    var cur = 0, done = 0, t0 = null, PAUSE = 400, DUR = 2400;
+    function setPending(p, str) {
+      p.textContent = '';
+      str.split(/([\p{L}\p{N}]+)/u).forEach(function (part) {
+        if (!part) return;
+        if (/^[\p{L}\p{N}]+$/u.test(part)) {
+          var a = document.createElement('span');
+          a.className = 'a';
+          a.textContent = part;
+          p.appendChild(a);
+        } else {
+          p.appendChild(document.createTextNode(part));
+        }
+      });
+    }
+    function advance(target) {
+      while (done < target && cur < items.length) {
+        var it = items[cur];
+        it.k++;
+        done++;
+        it.d.textContent = it.text.slice(0, it.k);
+        setPending(it.p, it.text.slice(it.k));
+        if (it.k >= it.text.length) cur++;
+      }
+    }
+    function finish() {
+      roots.forEach(function (o) {
+        if (o.wrap.parentNode) o.wrap.parentNode.replaceChild(document.createTextNode(o.text), o.wrap);
+      });
+    }
+    function tick(ts) {
+      if (t0 === null) t0 = ts;
+      advance(Math.floor(Math.max(0, ts - t0 - PAUSE) / DUR * total));
+      if (done < total) requestAnimationFrame(tick); else finish();
+    }
+    requestAnimationFrame(tick);
+  }
 })();

@@ -229,3 +229,9 @@ h3 em { font-style: normal; color: var(--teal); font-size: .95rem; font-family: 
 /* Locked achievements: descriptions in Aurebesh (Star Wars alphabet, OFL font by silvinor) */
 @font-face { font-family: 'Aurebesh'; src: url('../fonts/Aurebesh.ttf') format('truetype'); font-display: swap; }
 .achv-grid li:not(.on):not([data-secret]) span { font-family: 'Aurebesh', var(--sans); font-size: 13px; letter-spacing: .04em; }
+
+/* Decode-on-load: hero text starts in Aurebesh and flips to English letter by letter */
+.js:not(.ready) :is(.hud-brand, .hud-nav a, .hero-text .kicker, .hero-text h1, .hero-text .role, .hero-text .lead, .hero-text .btn, .hero .tag) { visibility: hidden; }
+.dw { display: inline-block; white-space: nowrap; }
+.dw .a { font-family: 'Aurebesh', var(--sans); opacity: .7; font-size: calc(1em * var(--s, 1)); }
+.dw > span { line-height: 0; } /* Aurebesh font metrics must not make the lines taller than the final English text */
