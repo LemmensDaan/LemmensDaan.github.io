@@ -411,6 +411,9 @@
 (function () {
   'use strict';
   var TO = 'daan.lemmens@hotmail.com';
+  // Web3Forms access key (free at web3forms.com: enter your email, the key is mailed to you). The key is meant to be public.
+  // While it is empty the forms fall back to FormSubmit, which is currently unreliable.
+  var W3F_KEY = 'aedc6eb9-b30d-4d68-ab05-c0a9b0831137';
 
   document.querySelectorAll('form.form').forEach(function (form) {
     var status = form.querySelector('.status');
@@ -440,7 +443,17 @@
       status.textContent = 'Sending…';
       var payload = {};
       new FormData(form).forEach(function (v, k) { payload[k] = v; });
-      fetch(form.action.replace('formsubmit.co/', 'formsubmit.co/ajax/'), {
+      var url = form.action.replace('formsubmit.co/', 'formsubmit.co/ajax/');
+      if (W3F_KEY) { // Web3Forms: same fields, its own names for key, subject and the spam trap
+        url = 'https://api.web3forms.com/submit';
+        var spam = payload._honey;
+        Object.keys(payload).forEach(function (k) { if (k.charAt(0) === '_') delete payload[k]; });
+        payload.access_key = W3F_KEY;
+        payload.subject = form.dataset.kind === 'feedback' ? 'CV site: page feedback' : 'CV site: new message';
+        payload.from_name = 'CV site';
+        payload.botcheck = spam ? 'on' : '';
+      }
+      fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify(payload)
