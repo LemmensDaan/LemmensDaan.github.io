@@ -404,28 +404,33 @@
   }
   function report(what) { if (dbg) dbg.textContent = what + ' | step ' + pos + '/' + code.length; }
 
+  // Positions are taken in SCREEN coordinates. clientX/Y shift while the phone's address bar collapses during a scroll,
+  // which turned a swipe up into a swipe down; screenX/Y belong to the physical screen and don't move.
   var t0 = null, last = null;
   document.addEventListener('touchstart', function (e) {
     if (e.touches.length !== 1) { t0 = null; return; }
-    t0 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    t0 = { x: e.touches[0].screenX, y: e.touches[0].screenY };
     last = t0;
   }, { passive: true });
   document.addEventListener('touchmove', function (e) {
-    if (t0 && e.touches.length === 1) last = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    if (t0 && e.touches.length === 1) last = { x: e.touches[0].screenX, y: e.touches[0].screenY };
   }, { passive: true });
 
-  function finish() {
+  function finish(e) {
     if (!t0) return;
+    if (e && e.type === 'touchend' && e.changedTouches && e.changedTouches.length) {
+      last = { x: e.changedTouches[0].screenX, y: e.changedTouches[0].screenY };
+    }
     var dx = last.x - t0.x, dy = last.y - t0.y;
     t0 = null;
     var ax = Math.abs(dx), ay = Math.abs(dy), d = Math.max(ax, ay);
     if (d < 12) { // tap: only counts for the final B, A
       if (pos >= 8) feed(pos === 8 ? 'b' : 'a');
-      report('tap');
+      report('tap dx=' + Math.round(dx) + ' dy=' + Math.round(dy));
     } else if (d >= 30) {
       var dir = ay > ax ? (dy < 0 ? 'ArrowUp' : 'ArrowDown') : (dx < 0 ? 'ArrowLeft' : 'ArrowRight');
       feed(dir);
-      report(dir.replace('Arrow', 'swipe '));
+      report(dir.replace('Arrow', 'swipe ') + ' dx=' + Math.round(dx) + ' dy=' + Math.round(dy));
     }
   }
   document.addEventListener('touchend', finish, { passive: true });
