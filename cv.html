@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Daan Lemmens · CV</title>
+<style>
+  @page { size: A4; margin: 10mm 13mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 9.3pt/1.35 "Segoe UI", Arial, sans-serif; color: #1b1f33; }
+  header { border-bottom: 3px solid #1fb8a0; padding-bottom: 8px; margin-bottom: 10px; }
+  h1 { margin: 0; font-size: 24pt; letter-spacing: -.01em; }
+  .role { color: #1fb8a0; font-weight: 700; font-size: 12pt; margin: 0; }
+  .contact { margin: 4px 0 0; color: #555; font-size: 9.5pt; }
+  h2 { font-size: 10.5pt; text-transform: uppercase; letter-spacing: .08em; color: #1fb8a0; border-bottom: 1px solid #d5d9ea; padding-bottom: 2px; margin: 10px 0 4px; }
+  .job { margin-bottom: 8px; break-inside: avoid; }
+  .job h3 { margin: 0; font-size: 10.5pt; display: flex; justify-content: space-between; gap: 12px; }
+  .job h3 span { font-weight: 400; color: #666; font-size: 9.5pt; white-space: nowrap; }
+  .co { color: #555; margin: 0; }
+  ul { margin: 3px 0 0; padding-left: 16px; }
+  li { margin: 1px 0; }
+  p { margin: 3px 0; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .skills b { display: inline-block; min-width: 82px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Daan Lemmens</h1>
+  <p class="role">Full Stack Developer</p>
+  <p class="contact">daan.lemmens@hotmail.com · Belgium · linkedin.com/in/daan-lemmens · github.com/LemmensDaan · lemmensdaan.github.io</p>
+</header>
+
+<h2>Profile</h2>
+<p>Full stack developer with six years of experience, currently building a multi-tenant payroll and HR data platform on .NET, React and Azure. Comfortable across backend and frontend, with some cloud infrastructure experience, and at home with AI-assisted development. In my spare time I build web, game and hardware projects, from tabletop tools to a self-hosted e-ink dashboard.</p>
+
+<h2>Experience</h2>
+<div class="job">
+  <h3>Full Stack Developer <span>Sep 2022 – present</span></h3>
+  <p class="co">Paybix · St-Katelijne-Waver (via ElmosExpert until Sep 2023, then permanent)</p>
+  <ul>
+    <li>Develop Epix, a multi-tenant payroll and HR data platform with integrations to payroll providers across Europe and the UK</li>
+    <li>Main contributor to Epix's own API: C# / .NET, ASP.NET Core, EF Core on SQL Server, REST and GraphQL</li>
+    <li>Built and maintained the API integrations with external payroll and HR systems</li>
+    <li>Frontend in React and TypeScript in an Nx monorepo, with generated GraphQL clients</li>
+    <li>Some hands-on experience with Azure infrastructure as code (Bicep) and Azure DevOps pipelines</li>
+  </ul>
+</div>
+<div class="job">
+  <h3>IT Consultant <span>Sep 2022 – Sep 2023</span></h3>
+  <p class="co">ElmosExpert · Mechelen</p>
+  <ul><li>Placed at Paybix under a hire-to-hire arrangement; converted to a permanent contract after one year</li></ul>
+</div>
+<div class="job">
+  <h3>Software Developer <span>Oct 2020 – Aug 2022</span></h3>
+  <p class="co">Contribute NV · Kontich</p>
+  <ul>
+    <li>Oracle APEX development for NBN (standards and customer management) and Sabam (project-management automation)</li>
+    <li>Modernised the registration and online payment flow for walking federations (Cronolive)</li>
+    <li>Manual and automated testing of a Petronas application</li>
+  </ul>
+</div>
+<div class="job">
+  <h3>Intern, then Front End Developer <span>Oct 2019 – Apr 2020</span></h3>
+  <p class="co">Cumul.io · Leuven</p>
+  <ul>
+    <li>Built an Angular library that embeds dashboards in a few lines of code, now used by customers; wrote its tutorial and functional analysis</li>
+    <li>Migrated large parts of the Cumul.io Academy from AngularJS to Angular</li>
+  </ul>
+</div>
+
+<h2>Projects</h2>
+<ul>
+  <li><b>SWN Builder</b> (swn-builder.pages.dev): web companion for the tabletop RPG Stars Without Number, with 3D procedural planets, PDF export and offline mode. React 19, TypeScript, Three.js, Cloudflare Pages.</li>
+  <li><b>Star Rogue</b>: FTL-style space roguelike with procedural star systems and custom shaders. Godot 4, GDScript. Work in progress.</li>
+  <li><b>Home dashboard (InkyPi)</b>: customised open-source e-ink dashboard on a Raspberry Pi, with a macro-pad controller daemon and a themed calendar plugin. Python.</li>
+</ul>
+
+<div class="cols">
+  <div>
+    <h2>Skills</h2>
+    <p class="skills"><b>Backend</b> C#, .NET, API design and integrations, ASP.NET Core, EF Core, SQL Server, GraphQL, Oracle APEX, PL/SQL, Java</p>
+    <p class="skills"><b>Frontend</b> React, TypeScript, Angular, HTML, CSS, Three.js</p>
+    <p class="skills"><b>Cloud</b> Azure, Bicep, Azure DevOps, Git</p>
+    <p class="skills"><b>Other</b> Cypress, Jest, xUnit, Godot, Python, Raspberry Pi</p>
+  </div>
+  <div>
+    <h2>Education</h2>
+    <p><b>UC Leuven-Limburg</b>, 2016 – 2020<br>Professional bachelor in Applied Computer Science, software development</p>
+    <p><b>Campus Groep T, Leuven</b>, 2014 – 2016<br>Industrial Sciences (first years)</p>
+    <h2>Languages</h2>
+    <p>Dutch (native) · English (C2)<br>French (A2 listening and reading, A1 speaking and writing)</p>
+    <h2>Interests</h2>
+    <p>Gaming, D&amp;D and tabletop RPGs, music, hobby projects, running</p>
+  </div>
+</div>
+</body>
+</html>
