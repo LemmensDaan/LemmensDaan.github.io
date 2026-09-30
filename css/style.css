@@ -262,7 +262,7 @@ h3 em { font-style: normal; color: var(--teal); font-size: .95rem; font-family: 
 .astro * { pointer-events: auto; }
 body { position: relative; } /* absolute things (dock, background ship) are placed in page space */
 /* horizontal swipes belong to the page (Konami code), not to the browser's back/forward gesture */
-html, body { touch-action: pan-y pinch-zoom; overscroll-behavior-x: none; }
+html, body { touch-action: pan-y pinch-zoom; overscroll-behavior: none; }
 .warp-toggle { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 13px; color: var(--gold); cursor: pointer; }
 .warp-toggle[hidden] { display: none; }
 .warp-toggle input { accent-color: var(--gold); }

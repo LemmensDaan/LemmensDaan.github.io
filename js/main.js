@@ -375,12 +375,16 @@
 
   // --- Konami code ---------------------------------------------------------
   var code = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-  var pos = 0;
+  var pos = 0, posInv = 0; // posInv = the mirrored sequence, only fed by touch
+  var MIRROR = { ArrowUp: 'ArrowDown', ArrowDown: 'ArrowUp', ArrowLeft: 'ArrowRight', ArrowRight: 'ArrowLeft' };
+  function advance(p, k) { return (k === code[p]) ? p + 1 : (k === code[0] ? 1 : 0); }
 
-  function feed(k) {
-    pos = (k === code[pos]) ? pos + 1 : (k === code[0] ? 1 : 0);
-    if (pos === code.length) {
+  function feed(k, touch) {
+    pos = advance(pos, k);
+    if (touch) posInv = advance(posInv, MIRROR[k] || k); // phones and people disagree on which way is "up"; accept either
+    if (pos === code.length || posInv === code.length) {
       pos = 0;
+      posInv = 0;
       if (!unlocked.konami) { // the popup and the burst only happen the first time; after that it is a switch in the panel
         warp = 1;
         notify('Secret unlocked: warp speed!');
@@ -402,7 +406,7 @@
     dbg.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;padding:6px 10px;border-radius:6px;background:#000c;color:#3fe0c5;font:12px monospace;pointer-events:none';
     document.body.appendChild(dbg);
   }
-  function report(what) { if (dbg) dbg.textContent = what + ' | step ' + pos + '/' + code.length; }
+  function report(what) { if (dbg) dbg.textContent = what + ' | step ' + pos + '/' + code.length + ' (mirrored ' + posInv + ')'; }
 
   // Positions are taken in SCREEN coordinates. clientX/Y shift while the phone's address bar collapses during a scroll,
   // which turned a swipe up into a swipe down; screenX/Y belong to the physical screen and don't move.
@@ -425,11 +429,12 @@
     t0 = null;
     var ax = Math.abs(dx), ay = Math.abs(dy), d = Math.max(ax, ay);
     if (d < 12) { // tap: only counts for the final B, A
-      if (pos >= 8) feed(pos === 8 ? 'b' : 'a');
+      var far = Math.max(pos, posInv);
+      if (far >= 8) feed(far === 8 ? 'b' : 'a', true);
       report('tap dx=' + Math.round(dx) + ' dy=' + Math.round(dy));
     } else if (d >= 30) {
       var dir = ay > ax ? (dy < 0 ? 'ArrowUp' : 'ArrowDown') : (dx < 0 ? 'ArrowLeft' : 'ArrowRight');
-      feed(dir);
+      feed(dir, true);
       report(dir.replace('Arrow', 'swipe ') + ' dx=' + Math.round(dx) + ' dy=' + Math.round(dy));
     }
   }
