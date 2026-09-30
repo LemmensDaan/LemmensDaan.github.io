@@ -6,13 +6,19 @@
   // --- Starfield -----------------------------------------------------------
   var canvas = document.getElementById('stars');
   var ctx = canvas.getContext('2d');
-  var stars = [], w = 0, h = 0, warp = 0, scrollY = 0;
+  var stars = [], w = 0, h = 0, warp = 0, warpMode = false, scrollY = 0;
 
   function resize() {
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), oldW = w, oldH = h;
     w = window.innerWidth; h = window.innerHeight;
     canvas.width = w * dpr; canvas.height = h * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (stars.length && w === oldW) { // height-only change (phone address bar): keep the sky, just fill any new strip
+      if (h > oldH) {
+        for (var k = Math.round(w * (h - oldH) / 4500); k > 0; k--) stars.push({ x: Math.random() * w, y: oldH + Math.random() * (h - oldH), z: Math.random() * 0.9 + 0.1 });
+      }
+      return;
+    }
     var count = Math.round((w * h) / 4500);
     stars = [];
     for (var i = 0; i < count; i++) {
@@ -39,6 +45,7 @@
       }
     }
     if (warp > 0) warp = Math.max(0, warp - 0.012);
+    if (warpMode && warp < 0.7) warp = 0.7; // warp mode: the stars keep streaking
     requestAnimationFrame(draw);
   }
 
@@ -94,9 +101,11 @@
       if (on) n++;
       if (li.hasAttribute('data-secret')) {
         li.querySelector('b').textContent = on ? 'Warp speed' : '???';
-        li.querySelector('span').textContent = on ? 'Found the secret code' : 'A secret. Hint: Konami';
+        li.querySelector('span').textContent = on ? 'Found the secret code. Flip the switch for warp mode.' : 'A secret. Hint: Konami';
       }
     });
+    var wt = document.getElementById('warp-toggle-wrap');
+    if (wt) wt.hidden = !unlocked.konami || reduce; // the switch only exists once the secret is found
     var c = document.getElementById('achv-n');
     if (c) c.textContent = n;
     var t = document.getElementById('achv-total');
@@ -120,6 +129,15 @@
   }
   document.addEventListener('unlock', function (e) { unlock(e.detail); });
   render();
+
+  var warpBox = document.getElementById('warp-toggle');
+  if (warpBox) {
+    try { if (unlocked.konami && localStorage.getItem('dl-warp') === '1') { warpBox.checked = true; warpMode = true; } } catch (e) {}
+    warpBox.addEventListener('change', function () {
+      warpMode = warpBox.checked;
+      try { localStorage.setItem('dl-warp', warpMode ? '1' : '0'); } catch (e) {}
+    });
+  }
 
   var btn = document.getElementById('achv-btn');
   var panel = document.getElementById('achv-panel');
@@ -317,7 +335,12 @@
         astro.style.scale = 0.15; // zooms away, CSS 'scale' is independent of the float and drift
       }
     });
-    window.addEventListener('resize', function () { driftPos.x = driftPos.y = 0; astro.style.translate = ''; }); // back home so he can't end up off-screen
+    var lastW = window.innerWidth;
+    window.addEventListener('resize', function () {
+      if (window.innerWidth === lastW) return; // height-only change = phone address bar, ignore
+      lastW = window.innerWidth;
+      driftPos.x = driftPos.y = 0; astro.style.translate = ''; // back home so he can't end up off-screen
+    });
   }
   document.querySelectorAll('a[href*="linkedin.com"], a[href*="github.com"]').forEach(function (a) {
     a.addEventListener('click', function () { unlock('networker'); });
@@ -358,9 +381,11 @@
     pos = (k === code[pos]) ? pos + 1 : (k === code[0] ? 1 : 0);
     if (pos === code.length) {
       pos = 0;
-      warp = 1;
-      notify('Secret unlocked: warp speed!');
-      document.dispatchEvent(new CustomEvent('unlock', { detail: 'konami' }));
+      if (!unlocked.konami) { // the popup and the burst only happen the first time; after that it is a switch in the panel
+        warp = 1;
+        notify('Secret unlocked: warp speed!');
+        document.dispatchEvent(new CustomEvent('unlock', { detail: 'konami' }));
+      }
     }
   }
 
@@ -372,7 +397,7 @@
   // Phone browsers often fire touchcancel (not touchend) once they start scrolling,
   // so the gesture is finished from the last touchmove position on either event.
   var dbg = null;
-  if (/[?&]debug/.test(window.location.search)) {
+  if (/[?&]debug(&|$)/.test(window.location.search)) {
     dbg = document.createElement('div');
     dbg.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;padding:6px 10px;border-radius:6px;background:#000c;color:#3fe0c5;font:12px monospace;pointer-events:none';
     document.body.appendChild(dbg);
