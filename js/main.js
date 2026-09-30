@@ -131,7 +131,20 @@
   if (astro) {
     astro.addEventListener('click', function () {
       unlock('hello');
-      if (++pokes >= 10) unlock('poke');
+      if (astro.getAttribute('data-state') === 'sleep') {
+        // woken up: annoyed for a few seconds, then back to sleep
+        astro.setAttribute('data-state', 'annoyed');
+        astro.setAttribute('data-annoyed', '1');
+        unlock('wake');
+        setTimeout(function () {
+          astro.removeAttribute('data-annoyed');
+          astro.setAttribute('data-state', 'sleep');
+        }, 6000);
+      }
+      if (++pokes === 10) {
+        unlock('poke');
+        astro.style.scale = 0.15; // zooms away, CSS 'scale' is independent of the hop/float animations
+      }
       astro.classList.remove('hop');
       void astro.getBoundingClientRect();
       astro.classList.add('hop');
@@ -244,7 +257,7 @@
     else if (h >= 9 && h < 17) { what = 'at work, shipping code'; state = 'work'; }
     else { what = 'side quest time'; state = 'quest'; }
     var astro = document.getElementById('astro');
-    if (astro) astro.setAttribute('data-state', state);
+    if (astro && !astro.hasAttribute('data-annoyed')) astro.setAttribute('data-state', state);
     if (state === 'sleep' && !q.get('time')) document.dispatchEvent(new CustomEvent('unlock', { detail: 'nightowl' }));
     el.textContent = 'Status: ' + what + ' · ' + hh + ':' + mm + ' in Belgium';
   }

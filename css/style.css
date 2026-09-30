@@ -180,7 +180,7 @@ h3 em { font-style: normal; color: var(--teal); font-size: .95rem; font-family: 
 /* Astronaut states */
 .astro .ov { display: none; }
 .astro[data-state="sleep"] .ov-sleep, .astro[data-state="work"] .ov-work,
-.astro[data-state="quest"] .ov-quest, .astro[data-state="off"] .ov-off { display: inline; }
+.astro[data-state="quest"] .ov-quest, .astro[data-state="off"] .ov-off, .astro[data-state="annoyed"] .ov-annoyed { display: inline; }
 .astro[data-state="sleep"] .visor { fill: #1b5b52; }
 .astro[data-state="sleep"] .eye { display: none; }
 .astro[data-state="off"] .eye { display: none; }
@@ -209,7 +209,18 @@ h3 em { font-style: normal; color: var(--teal); font-size: .95rem; font-family: 
 
 /* Clickable astronaut */
 .astro { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.astro.hop { animation: hop .6s ease-out; }
-@keyframes hop { 0% { transform: none; } 40% { transform: translateY(-36px) rotate(180deg); } 100% { transform: rotate(360deg); } }
+.astro.hop { animation: hop .7s ease-out; }
+@keyframes hop { 0% { transform: none; } 30% { transform: translateY(-44px); } 55% { transform: translateY(0); } 70% { transform: translateY(-12px); } 85% { transform: translateY(0); } 100% { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .astro.hop { animation: none; } }
 .achv-panel .achv-grid li { padding: 10px 14px; }
+.astro { transition: scale .6s ease-in; }
+.astro[data-state="annoyed"] .visor { fill: #ff8066; }
+.anger { animation: anger .5s ease-in-out infinite alternate; }
+@keyframes anger { to { transform: scale(1.25); transform-box: fill-box; transform-origin: center; } }
+@media (prefers-reduced-motion: reduce) { .anger { animation: none; } }
+.astro[data-state="annoyed"] .eye { display: none; }
+.achv-panel h2 { margin-bottom: 14px; }
+
+/* Locked achievements: descriptions in Aurebesh (Star Wars alphabet, OFL font by silvinor) */
+@font-face { font-family: 'Aurebesh'; src: url('../fonts/Aurebesh.ttf') format('truetype'); font-display: swap; }
+.achv-grid li:not(.on):not([data-secret]) span { font-family: 'Aurebesh', var(--sans); font-size: 13px; letter-spacing: .04em; }
