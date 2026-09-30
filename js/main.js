@@ -56,11 +56,22 @@
   var toast = document.getElementById('toast');
   var toastTimer;
 
+  var toastQueue = [], toastBusy = false;
   function notify(msg) {
+    toastQueue.push(msg);
+    if (!toastBusy) nextToast();
+  }
+  function nextToast() {
+    var msg = toastQueue.shift();
+    if (!msg) { toastBusy = false; return; }
+    toastBusy = true;
     toast.textContent = '★ ' + msg;
     toast.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 2600);
+    toastTimer = setTimeout(function () {
+      toast.classList.remove('show');
+      setTimeout(nextToast, 350);
+    }, 2600);
   }
 
   function onScroll() {
@@ -95,6 +106,9 @@
   function unlock(id) {
     if (unlocked[id]) return;
     unlocked[id] = 1;
+    var li = document.querySelector('.achv-grid li[data-id="' + id + '"]');
+    var name = li ? li.querySelector('b').textContent : id;
+    if (id !== 'konami') notify('Achievement unlocked: ' + name); // the secret one has its own popup
     try { localStorage.setItem(KEY, JSON.stringify(unlocked)); } catch (e) {}
     render();
     var rest = Array.prototype.filter.call(document.querySelectorAll('.achv-grid li'), function (li) {
@@ -192,8 +206,8 @@
   // --- Konami code ---------------------------------------------------------
   var code = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
   var pos = 0;
-  document.addEventListener('keydown', function (e) {
-    var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+
+  function feed(k) {
     pos = (k === code[pos]) ? pos + 1 : (k === code[0] ? 1 : 0);
     if (pos === code.length) {
       pos = 0;
@@ -201,7 +215,28 @@
       notify('Secret unlocked: warp speed!');
       document.dispatchEvent(new CustomEvent('unlock', { detail: 'konami' }));
     }
+  }
+
+  document.addEventListener('keydown', function (e) {
+    feed(e.key.length === 1 ? e.key.toLowerCase() : e.key);
   });
+
+  // Touch version: swipes stand in for the arrow keys, and the last two taps for B and A.
+  var t0 = null;
+  document.addEventListener('touchstart', function (e) {
+    t0 = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null;
+  }, { passive: true });
+  document.addEventListener('touchend', function (e) {
+    if (!t0) return;
+    var t = e.changedTouches[0], dx = t.clientX - t0.x, dy = t.clientY - t0.y;
+    t0 = null;
+    var ax = Math.abs(dx), ay = Math.abs(dy);
+    if (Math.max(ax, ay) < 10) { // tap: only counts for the final B, A
+      if (pos >= 8) feed(pos === 8 ? 'b' : 'a');
+    } else if (Math.max(ax, ay) >= 50) {
+      feed(ay > ax ? (dy < 0 ? 'ArrowUp' : 'ArrowDown') : (dx < 0 ? 'ArrowLeft' : 'ArrowRight'));
+    }
+  }, { passive: true });
 })();
 
 // --- Contact + feedback forms (FormSubmit, no backend) ----------------------
