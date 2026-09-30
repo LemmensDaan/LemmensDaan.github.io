@@ -375,16 +375,23 @@
 
   // --- Konami code ---------------------------------------------------------
   var code = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-  var pos = 0, posInv = 0; // posInv = the mirrored sequence, only fed by touch
+  // Touch: people (and phones) can disagree on which way "up" and which way "left" is, and not always for both axes.
+  // So four versions of the sequence are tracked at once: up/down normal or mirrored, left/right normal or mirrored.
+  // ps[0] is the plain sequence (keyboard + touch); ps[1..3] are only fed by touch.
+  var ps = [0, 0, 0, 0];
   var MIRROR = { ArrowUp: 'ArrowDown', ArrowDown: 'ArrowUp', ArrowLeft: 'ArrowRight', ArrowRight: 'ArrowLeft' };
   function advance(p, k) { return (k === code[p]) ? p + 1 : (k === code[0] ? 1 : 0); }
+  function mapKey(k, i) { // bit 0: mirror up/down, bit 1: mirror left/right
+    if ((i & 1) && (k === 'ArrowUp' || k === 'ArrowDown')) return MIRROR[k];
+    if ((i & 2) && (k === 'ArrowLeft' || k === 'ArrowRight')) return MIRROR[k];
+    return k;
+  }
 
   function feed(k, touch) {
-    pos = advance(pos, k);
-    if (touch) posInv = advance(posInv, MIRROR[k] || k); // phones and people disagree on which way is "up"; accept either
-    if (pos === code.length || posInv === code.length) {
-      pos = 0;
-      posInv = 0;
+    ps[0] = advance(ps[0], k);
+    if (touch) for (var i = 1; i < 4; i++) ps[i] = advance(ps[i], mapKey(k, i));
+    if (ps.some(function (p) { return p === code.length; })) {
+      ps = [0, 0, 0, 0];
       if (!unlocked.konami) { // the popup and the burst only happen the first time; after that it is a switch in the panel
         warp = 1;
         notify('Secret unlocked: warp speed!');
@@ -409,9 +416,10 @@
   var NAMES = { ArrowUp: 'UP', ArrowDown: 'DOWN', ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', b: 'TAP', a: 'TAP' };
   function report() {
     if (!dbg) return;
-    dbg.textContent = 'konami debug v3\n' + lastLine +
-      '\nnormal   ' + pos + '/' + code.length + '  next: ' + (NAMES[code[pos]] || '-') +
-      '\nmirrored ' + posInv + '/' + code.length + '  next: ' + (NAMES[MIRROR[code[posInv]] || code[posInv]] || '-');
+    var labels = ['up/down normal, left/right normal  ', 'up/down MIRRORED, left/right normal ', 'up/down normal, left/right MIRRORED ', 'up/down MIRRORED, left/right MIRRORED'];
+    dbg.textContent = 'konami debug v4\n' + lastLine + '\n' + ps.map(function (p, i) {
+      return ps[i] + '/' + code.length + ' next ' + (NAMES[mapKey(code[p], i)] || '-') + '  ' + labels[i];
+    }).join('\n');
   }
   report();
 
@@ -441,7 +449,7 @@
     t0 = null;
     var ax = Math.abs(dx), ay = Math.abs(dy), d = Math.max(ax, ay), what;
     if (d < 12) { // tap: only counts for the final B, A
-      var far = Math.max(pos, posInv);
+      var far = Math.max.apply(null, ps);
       if (far >= 8) feed(far === 8 ? 'b' : 'a', true);
       what = 'tap';
     } else if (d >= 30) {
