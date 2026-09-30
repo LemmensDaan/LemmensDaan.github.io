@@ -101,9 +101,11 @@
       if (on) n++;
       if (li.hasAttribute('data-secret')) {
         li.querySelector('b').textContent = on ? 'Warp speed' : '???';
-        li.querySelector('span').textContent = on ? 'Found the secret code. Flip the switch for warp mode.' : 'A secret. Hint: Konami';
+        li.querySelector('span').textContent = on ? 'Found the secret code. Flip the switch for warp mode.' : 'A secret. Hint: Konami. Tap to open a controller.';
       }
     });
+    var padEl = document.getElementById('pad');
+    if (padEl && unlocked.konami) padEl.hidden = true;
     var wt = document.getElementById('warp-toggle-wrap');
     if (wt) wt.hidden = !unlocked.konami || reduce; // the switch only exists once the secret is found
     var c = document.getElementById('achv-n');
@@ -374,121 +376,53 @@
   });
 
   // --- Konami code ---------------------------------------------------------
+  // Keyboard: the arrow keys, then B and A. Phone (or mouse): tap the locked secret tile in the achievements panel and
+  // enter the code on the on-screen controller.
   var code = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-  // Touch: people (and phones) can disagree on which way "up" and which way "left" is, and not always for both axes.
-  // So four versions of the sequence are tracked at once: up/down normal or mirrored, left/right normal or mirrored.
-  // ps[0] is the plain sequence (keyboard + touch); ps[1..3] are only fed by touch.
-  var ps = [0, 0, 0, 0];
-  var MIRROR = { ArrowUp: 'ArrowDown', ArrowDown: 'ArrowUp', ArrowLeft: 'ArrowRight', ArrowRight: 'ArrowLeft' };
-  function advance(p, k) { return (k === code[p]) ? p + 1 : (k === code[0] ? 1 : 0); }
-  function mapKey(k, i) { // bit 0: mirror up/down, bit 1: mirror left/right
-    if ((i & 1) && (k === 'ArrowUp' || k === 'ArrowDown')) return MIRROR[k];
-    if ((i & 2) && (k === 'ArrowLeft' || k === 'ArrowRight')) return MIRROR[k];
-    return k;
+  var pos = 0;
+  var pad = document.getElementById('pad'), secretTile = document.querySelector('[data-id="konami"]'), wrongTimer = null;
+
+  function renderPad() { // the ten lights follow the progress, whichever way the code is being entered
+    if (!pad) return;
+    var leds = pad.querySelectorAll('.pad-leds i');
+    for (var i = 0; i < leds.length; i++) leds[i].classList.toggle('on', i < pos);
   }
 
-  function feed(k, touch) {
-    var before = Math.max.apply(null, ps);
-    ps[0] = advance(ps[0], k);
-    if (touch) for (var i = 1; i < 4; i++) ps[i] = advance(ps[i], mapKey(k, i));
-    var after = Math.max.apply(null, ps);
-    // feedback only from step 4 on, so ordinary scrolling never buzzes
-    if (touch && navigator.vibrate && after >= 4 && after > before && after < code.length) navigator.vibrate(15);
-    if (ps.some(function (p) { return p === code.length; })) {
-      if (touch && navigator.vibrate) navigator.vibrate([40, 60, 40]);
-      ps = [0, 0, 0, 0];
+  function feed(k) {
+    pos = (k === code[pos]) ? pos + 1 : (k === code[0] ? 1 : 0);
+    if (pos === code.length) {
+      pos = 0;
       if (!unlocked.konami) { // the popup and the burst only happen the first time; after that it is a switch in the panel
         warp = 1;
         notify('Secret unlocked: warp speed!');
         document.dispatchEvent(new CustomEvent('unlock', { detail: 'konami' }));
       }
     }
+    renderPad();
   }
 
   document.addEventListener('keydown', function (e) {
     feed(e.key.length === 1 ? e.key.toLowerCase() : e.key);
   });
 
-  // Touch version: swipes stand in for the arrow keys and the last two taps for B and A. Either orientation is accepted.
-  // Positions are taken in SCREEN coordinates (clientX/Y shift while a phone's address bar collapses during a scroll).
-  // The gesture is finished on touchend OR touchcancel, because browsers cancel the touch once they start scrolling.
-  var dbg = null, lastLine = 'no gesture yet';
-  if (/[?&]debug(&|$)/.test(window.location.search)) {
-    dbg = document.createElement('div');
-    dbg.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;padding:6px 10px;border-radius:6px;background:#000d;color:#3fe0c5;font:12px/1.4 monospace;white-space:pre;pointer-events:none;max-width:94vw;overflow:hidden';
-    document.body.appendChild(dbg);
+  if (pad && secretTile) {
+    secretTile.addEventListener('click', function (e) {
+      if (unlocked.konami || pad.contains(e.target)) return;
+      pad.hidden = !pad.hidden;
+    });
+    pad.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('button[data-k]') : null;
+      if (!btn) return;
+      var before = pos;
+      feed(btn.getAttribute('data-k'));
+      if (navigator.vibrate) navigator.vibrate(10);
+      if (!unlocked.konami && pos <= before) { // wrong button: the lights flash red and the code starts over
+        pad.classList.add('wrong');
+        clearTimeout(wrongTimer);
+        wrongTimer = setTimeout(function () { pad.classList.remove('wrong'); }, 450); // a short flash, then back to normal
+      }
+    });
   }
-  var NAMES = { ArrowUp: 'UP', ArrowDown: 'DOWN', ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', b: 'TAP', a: 'TAP' };
-  function report() {
-    if (!dbg) return;
-    var labels = ['up/down normal, left/right normal  ', 'up/down MIRRORED, left/right normal ', 'up/down normal, left/right MIRRORED ', 'up/down MIRRORED, left/right MIRRORED'];
-    dbg.textContent = 'konami debug v4\n' + lastLine + '\n' + ps.map(function (p, i) {
-      return ps[i] + '/' + code.length + ' next ' + (NAMES[mapKey(code[p], i)] || '-') + '  ' + labels[i];
-    }).join('\n');
-  }
-  report();
-
-  var t0 = null, last = null, c0 = null, cl = null, moves = 0, s0 = 0;
-  document.addEventListener('touchstart', function (e) {
-    if (e.touches.length !== 1) { t0 = null; return; }
-    var t = e.touches[0];
-    t0 = { x: t.screenX, y: t.screenY }; last = t0;
-    c0 = { x: t.clientX, y: t.clientY }; cl = c0;
-    moves = 0;
-    s0 = window.pageYOffset; // where the page was when the finger came down
-  }, { passive: true });
-  document.addEventListener('touchmove', function (e) {
-    if (t0 && e.touches.length === 1) {
-      var t = e.touches[0];
-      last = { x: t.screenX, y: t.screenY }; cl = { x: t.clientX, y: t.clientY };
-      moves++;
-    }
-  }, { passive: true });
-
-  function finish(e) {
-    if (!t0) return;
-    if (e && e.type === 'touchend' && e.changedTouches && e.changedTouches.length) {
-      var t = e.changedTouches[0];
-      last = { x: t.screenX, y: t.screenY }; cl = { x: t.clientX, y: t.clientY };
-    }
-    var dx = last.x - t0.x, dy = last.y - t0.y, cdx = cl.x - c0.x, cdy = cl.y - c0.y;
-    t0 = null;
-    var ax = Math.abs(dx), ay = Math.abs(dy), d = Math.max(ax, ay), what;
-    if (e && e.type === 'touchcancel' && d < 30) {
-      // The browser took over before any real movement reached us (typical when a new swipe starts while the page is
-      // still coasting). The page keeps moving though: scrolling down means the finger went up, and the other way round.
-      var start = s0;
-      setTimeout(function () {
-        var ds = window.pageYOffset - start, inferred = ds > 0 ? 'ArrowUp' : 'ArrowDown';
-        if (Math.abs(ds) >= 60) {
-          feed(inferred, true);
-          lastLine = 'swipe ' + NAMES[inferred] + ' (inferred from ' + Math.round(ds) + 'px of scrolling)';
-        } else {
-          lastLine = 'touch cancelled, page barely moved (' + Math.round(ds) + 'px)';
-        }
-        report();
-      }, 250);
-      lastLine = 'touch cancelled, checking the scroll...';
-      report();
-      return;
-    }
-    if (d < 12) { // tap: only counts for the final B, A
-      var far = Math.max.apply(null, ps);
-      if (far >= 8) feed(far === 8 ? 'b' : 'a', true);
-      what = 'tap';
-    } else if (d >= 30) {
-      var dir = ay > ax ? (dy < 0 ? 'ArrowUp' : 'ArrowDown') : (dx < 0 ? 'ArrowLeft' : 'ArrowRight');
-      feed(dir, true);
-      what = 'swipe ' + NAMES[dir];
-    } else {
-      what = 'too short (' + Math.round(d) + 'px)';
-    }
-    lastLine = what + ' | screen dx=' + Math.round(dx) + ' dy=' + Math.round(dy) +
-      '\nwindow dx=' + Math.round(cdx) + ' dy=' + Math.round(cdy) + ' | ' + moves + ' moves | ' + (e ? e.type : '?');
-    report();
-  }
-  document.addEventListener('touchend', finish, { passive: true });
-  document.addEventListener('touchcancel', finish, { passive: true });
 })();
 
 // --- Contact + feedback forms (FormSubmit, no backend) ----------------------

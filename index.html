@@ -43,7 +43,20 @@
         <li data-id="stargazer"><b>Stargazer</b><span>Stayed on the page for a full minute</span></li>
         <li data-id="wake"><b>Rude awakening</b><span>Wow, really..</span></li>
         <li data-id="ship"><b>Lift-off</b><span>Helped the astronaut reach his spaceship</span></li>
-        <li data-id="konami" data-secret="1"><b>???</b><span>A secret. Hint: Konami</span><label class="warp-toggle" id="warp-toggle-wrap" hidden><input type="checkbox" id="warp-toggle"> Warp mode</label></li>
+        <li data-id="konami" data-secret="1"><b>???</b><span>A secret. Hint: Konami. Tap to open a controller.</span><label class="warp-toggle" id="warp-toggle-wrap" hidden><input type="checkbox" id="warp-toggle"> Warp mode</label>
+          <div class="pad" id="pad" hidden>
+            <div class="pad-dpad">
+              <button type="button" data-k="ArrowUp" aria-label="Up">&#9650;</button>
+              <button type="button" data-k="ArrowLeft" aria-label="Left">&#9664;</button>
+              <button type="button" data-k="ArrowRight" aria-label="Right">&#9654;</button>
+              <button type="button" data-k="ArrowDown" aria-label="Down">&#9660;</button>
+            </div>
+            <div class="pad-ab">
+              <button type="button" data-k="b" aria-label="B">B</button>
+              <button type="button" data-k="a" aria-label="A">A</button>
+            </div>
+            <div class="pad-leds" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          </div></li>
         <li data-id="completionist"><b>Completionist</b><span>My kind of person</span></li>
       </ul>
   </div>
