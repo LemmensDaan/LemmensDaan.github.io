@@ -388,9 +388,14 @@
   }
 
   function feed(k, touch) {
+    var before = Math.max.apply(null, ps);
     ps[0] = advance(ps[0], k);
     if (touch) for (var i = 1; i < 4; i++) ps[i] = advance(ps[i], mapKey(k, i));
+    var after = Math.max.apply(null, ps);
+    // feedback only from step 4 on, so ordinary scrolling never buzzes
+    if (touch && navigator.vibrate && after >= 4 && after > before && after < code.length) navigator.vibrate(15);
     if (ps.some(function (p) { return p === code.length; })) {
+      if (touch && navigator.vibrate) navigator.vibrate([40, 60, 40]);
       ps = [0, 0, 0, 0];
       if (!unlocked.konami) { // the popup and the burst only happen the first time; after that it is a switch in the panel
         warp = 1;
@@ -423,13 +428,14 @@
   }
   report();
 
-  var t0 = null, last = null, c0 = null, cl = null, moves = 0;
+  var t0 = null, last = null, c0 = null, cl = null, moves = 0, s0 = 0;
   document.addEventListener('touchstart', function (e) {
     if (e.touches.length !== 1) { t0 = null; return; }
     var t = e.touches[0];
     t0 = { x: t.screenX, y: t.screenY }; last = t0;
     c0 = { x: t.clientX, y: t.clientY }; cl = c0;
     moves = 0;
+    s0 = window.pageYOffset; // where the page was when the finger came down
   }, { passive: true });
   document.addEventListener('touchmove', function (e) {
     if (t0 && e.touches.length === 1) {
@@ -448,6 +454,24 @@
     var dx = last.x - t0.x, dy = last.y - t0.y, cdx = cl.x - c0.x, cdy = cl.y - c0.y;
     t0 = null;
     var ax = Math.abs(dx), ay = Math.abs(dy), d = Math.max(ax, ay), what;
+    if (e && e.type === 'touchcancel' && d < 30) {
+      // The browser took over before any real movement reached us (typical when a new swipe starts while the page is
+      // still coasting). The page keeps moving though: scrolling down means the finger went up, and the other way round.
+      var start = s0;
+      setTimeout(function () {
+        var ds = window.pageYOffset - start, inferred = ds > 0 ? 'ArrowUp' : 'ArrowDown';
+        if (Math.abs(ds) >= 60) {
+          feed(inferred, true);
+          lastLine = 'swipe ' + NAMES[inferred] + ' (inferred from ' + Math.round(ds) + 'px of scrolling)';
+        } else {
+          lastLine = 'touch cancelled, page barely moved (' + Math.round(ds) + 'px)';
+        }
+        report();
+      }, 250);
+      lastLine = 'touch cancelled, checking the scroll...';
+      report();
+      return;
+    }
     if (d < 12) { // tap: only counts for the final B, A
       var far = Math.max.apply(null, ps);
       if (far >= 8) feed(far === 8 ? 'b' : 'a', true);
