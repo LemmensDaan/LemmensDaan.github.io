@@ -235,3 +235,7 @@ h3 em { font-style: normal; color: var(--teal); font-size: .95rem; font-family: 
 .dw { display: inline-block; white-space: nowrap; }
 .dw .a { font-family: 'Aurebesh', var(--sans); opacity: .7; font-size: calc(1em * var(--s, 1)); }
 .dw > span { line-height: 0; } /* Aurebesh font metrics must not make the lines taller than the final English text */
+.cursor { animation: blink 1s steps(1) infinite; }
+.cursor.typing { animation: none; }
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cursor { animation: none; } }

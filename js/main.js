@@ -335,14 +335,31 @@
   function ready() { root.classList.add('ready'); }
   if (reduce || !document.fonts || !window.Promise) { ready(); return; }
 
-  var SEL = '.hud-brand, .hud-nav a, .hero-text .kicker, .hero-text h1, .hero-text .role, .hero-text .lead, .hero-text .btn, .hero .tag';
+  var SEL = '.hud-brand, .hud-nav a, .hero-text h1, .hero-text .role, .hero-text .lead, .hero-text .btn, .hero .tag';
   var fonts = Promise.all([document.fonts.ready, document.fonts.load('16px Aurebesh')]);
   Promise.race([fonts, new Promise(function (r) { setTimeout(r, 2000); })]).then(start, start);
 
   function start() {
-    var items = [], roots = [];
+    // the "incoming transmission" line types itself out in English, like a console, before the translation starts
+    var kick = document.querySelector('.hero-text .kicker');
+    var kickFull = kick ? kick.textContent.replace(/_$/, '') : '';
+    var kickText = null, kickCur = null;
+    if (kick) {
+      kick.setAttribute('aria-label', kickFull + '_');
+      kick.textContent = '';
+      kickText = document.createElement('span');
+      kickCur = document.createElement('span');
+      kickCur.className = 'cursor';
+      kickCur.textContent = '_';
+      kick.appendChild(kickText);
+      kick.appendChild(kickCur);
+    }
+
+    var items = [], roots = [], groups = [];
     document.querySelectorAll(SEL).forEach(function (el) {
       if (!el.getClientRects().length) return; // e.g. the nav links inside a closed mobile menu
+      var g = { el: el, items: [], letters: 0, cur: 0, done: 0 };
+      groups.push(g);
       var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), nodes = [];
       while (walker.nextNode()) nodes.push(walker.currentNode);
       nodes.forEach(function (n) {
@@ -356,7 +373,10 @@
           w.className = 'dw';
           w.textContent = tok;
           wrap.appendChild(w);
-          items.push({ el: w, text: tok, k: 0 });
+          var it = { el: w, text: tok, k: 0 };
+          items.push(it);
+          g.items.push(it);
+          g.letters += tok.length;
         });
         n.parentNode.replaceChild(wrap, n);
         roots.push({ wrap: wrap, text: txt });
@@ -365,7 +385,6 @@
 
     // measure every word in English first, then lock its width so nothing jumps while it flips
     items.forEach(function (it) { it.w = it.el.getBoundingClientRect().width; });
-    var total = 0;
     items.forEach(function (it) {
       it.el.style.width = it.w + 'px';
       it.el.textContent = '';
@@ -375,7 +394,6 @@
       it.el.appendChild(it.d);
       it.el.appendChild(it.p);
       setPending(it.p, it.text);
-      total += it.text.length;
     });
     // Aurebesh glyphs are wider and taller than the Latin ones: shrink each word to fit its English width
     // (punctuation stays in the normal font at full size, so only the letters are scaled)
@@ -390,7 +408,8 @@
     });
     ready();
 
-    var cur = 0, done = 0, t0 = null, PAUSE = 400, DUR = 2400;
+    var t0 = null, TYPE_START = 700, TYPE_MS = 55, HOLD = 1300;
+    var PAUSE = TYPE_START + kickFull.length * TYPE_MS + HOLD; // translation waits until the line is typed and the cursor has blinked a while
     function setPending(p, str) {
       p.textContent = '';
       str.split(/([\p{L}\p{N}]+)/u).forEach(function (part) {
@@ -405,14 +424,26 @@
         }
       });
     }
-    function advance(target) {
-      while (done < target && cur < items.length) {
-        var it = items[cur];
+    // every piece of text gets its own short timeline starting at zero, so nothing has to "catch up":
+    // header links and the name flip first, the paragraph takes its time, buttons and caption follow
+    var hdrIdx = 0, btnIdx = 0;
+    groups.forEach(function (g) {
+      var el = g.el;
+      if (el.closest('.hud')) { g.start = hdrIdx++ * 80; g.dur = 700; }
+      else if (el.matches('h1')) { g.start = 0; g.dur = 1100; }
+      else if (el.matches('.role')) { g.start = 350; g.dur = 800; }
+      else if (el.matches('.lead')) { g.start = 600; g.dur = 2000; }
+      else if (el.matches('.btn')) { g.start = 1000 + btnIdx++ * 150; g.dur = 700; }
+      else { g.start = 1300; g.dur = 900; }
+    });
+    function advanceGroup(g, target) {
+      while (g.done < target && g.cur < g.items.length) {
+        var it = g.items[g.cur];
         it.k++;
-        done++;
+        g.done++;
         it.d.textContent = it.text.slice(0, it.k);
         setPending(it.p, it.text.slice(it.k));
-        if (it.k >= it.text.length) cur++;
+        if (it.k >= it.text.length) g.cur++;
       }
     }
     function finish() {
@@ -422,8 +453,18 @@
     }
     function tick(ts) {
       if (t0 === null) t0 = ts;
-      advance(Math.floor(Math.max(0, ts - t0 - PAUSE) / DUR * total));
-      if (done < total) requestAnimationFrame(tick); else finish();
+      if (kickText) {
+        var n = Math.min(kickFull.length, Math.floor(Math.max(0, ts - t0 - TYPE_START) / TYPE_MS));
+        if (kickText.textContent.length !== n) kickText.textContent = kickFull.slice(0, n);
+        kickCur.classList.toggle('typing', n > 0 && n < kickFull.length); // solid while typing, blinks when idle
+      }
+      var elapsed = ts - t0 - PAUSE, pending = false;
+      groups.forEach(function (g) {
+        var p = Math.min(1, Math.max(0, (elapsed - g.start) / g.dur));
+        advanceGroup(g, Math.floor(p * g.letters));
+        if (g.done < g.letters) pending = true;
+      });
+      if (pending) requestAnimationFrame(tick); else finish();
     }
     requestAnimationFrame(tick);
   }
