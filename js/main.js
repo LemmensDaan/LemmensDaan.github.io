@@ -397,46 +397,63 @@
     feed(e.key.length === 1 ? e.key.toLowerCase() : e.key);
   });
 
-  // Touch version: swipes stand in for the arrow keys, and the last two taps for B and A.
-  // Phone browsers often fire touchcancel (not touchend) once they start scrolling,
-  // so the gesture is finished from the last touchmove position on either event.
-  var dbg = null;
+  // Touch version: swipes stand in for the arrow keys and the last two taps for B and A. Either orientation is accepted.
+  // Positions are taken in SCREEN coordinates (clientX/Y shift while a phone's address bar collapses during a scroll).
+  // The gesture is finished on touchend OR touchcancel, because browsers cancel the touch once they start scrolling.
+  var dbg = null, lastLine = 'no gesture yet';
   if (/[?&]debug(&|$)/.test(window.location.search)) {
     dbg = document.createElement('div');
-    dbg.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;padding:6px 10px;border-radius:6px;background:#000c;color:#3fe0c5;font:12px monospace;pointer-events:none';
+    dbg.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;padding:6px 10px;border-radius:6px;background:#000d;color:#3fe0c5;font:12px/1.4 monospace;white-space:pre;pointer-events:none;max-width:94vw;overflow:hidden';
     document.body.appendChild(dbg);
   }
-  function report(what) { if (dbg) dbg.textContent = what + ' | step ' + pos + '/' + code.length + ' (mirrored ' + posInv + ')'; }
+  var NAMES = { ArrowUp: 'UP', ArrowDown: 'DOWN', ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', b: 'TAP', a: 'TAP' };
+  function report() {
+    if (!dbg) return;
+    dbg.textContent = 'konami debug v3\n' + lastLine +
+      '\nnormal   ' + pos + '/' + code.length + '  next: ' + (NAMES[code[pos]] || '-') +
+      '\nmirrored ' + posInv + '/' + code.length + '  next: ' + (NAMES[MIRROR[code[posInv]] || code[posInv]] || '-');
+  }
+  report();
 
-  // Positions are taken in SCREEN coordinates. clientX/Y shift while the phone's address bar collapses during a scroll,
-  // which turned a swipe up into a swipe down; screenX/Y belong to the physical screen and don't move.
-  var t0 = null, last = null;
+  var t0 = null, last = null, c0 = null, cl = null, moves = 0;
   document.addEventListener('touchstart', function (e) {
     if (e.touches.length !== 1) { t0 = null; return; }
-    t0 = { x: e.touches[0].screenX, y: e.touches[0].screenY };
-    last = t0;
+    var t = e.touches[0];
+    t0 = { x: t.screenX, y: t.screenY }; last = t0;
+    c0 = { x: t.clientX, y: t.clientY }; cl = c0;
+    moves = 0;
   }, { passive: true });
   document.addEventListener('touchmove', function (e) {
-    if (t0 && e.touches.length === 1) last = { x: e.touches[0].screenX, y: e.touches[0].screenY };
+    if (t0 && e.touches.length === 1) {
+      var t = e.touches[0];
+      last = { x: t.screenX, y: t.screenY }; cl = { x: t.clientX, y: t.clientY };
+      moves++;
+    }
   }, { passive: true });
 
   function finish(e) {
     if (!t0) return;
     if (e && e.type === 'touchend' && e.changedTouches && e.changedTouches.length) {
-      last = { x: e.changedTouches[0].screenX, y: e.changedTouches[0].screenY };
+      var t = e.changedTouches[0];
+      last = { x: t.screenX, y: t.screenY }; cl = { x: t.clientX, y: t.clientY };
     }
-    var dx = last.x - t0.x, dy = last.y - t0.y;
+    var dx = last.x - t0.x, dy = last.y - t0.y, cdx = cl.x - c0.x, cdy = cl.y - c0.y;
     t0 = null;
-    var ax = Math.abs(dx), ay = Math.abs(dy), d = Math.max(ax, ay);
+    var ax = Math.abs(dx), ay = Math.abs(dy), d = Math.max(ax, ay), what;
     if (d < 12) { // tap: only counts for the final B, A
       var far = Math.max(pos, posInv);
       if (far >= 8) feed(far === 8 ? 'b' : 'a', true);
-      report('tap dx=' + Math.round(dx) + ' dy=' + Math.round(dy));
+      what = 'tap';
     } else if (d >= 30) {
       var dir = ay > ax ? (dy < 0 ? 'ArrowUp' : 'ArrowDown') : (dx < 0 ? 'ArrowLeft' : 'ArrowRight');
       feed(dir, true);
-      report(dir.replace('Arrow', 'swipe ') + ' dx=' + Math.round(dx) + ' dy=' + Math.round(dy));
+      what = 'swipe ' + NAMES[dir];
+    } else {
+      what = 'too short (' + Math.round(d) + 'px)';
     }
+    lastLine = what + ' | screen dx=' + Math.round(dx) + ' dy=' + Math.round(dy) +
+      '\nwindow dx=' + Math.round(cdx) + ' dy=' + Math.round(cdy) + ' | ' + moves + ' moves | ' + (e ? e.type : '?');
+    report();
   }
   document.addEventListener('touchend', finish, { passive: true });
   document.addEventListener('touchcancel', finish, { passive: true });
