@@ -147,10 +147,145 @@
 
   var astro = document.getElementById('astro');
   var pokes = 0;
+  var driftPos = { x: 0, y: 0 }; // how far he has drifted from his home spot (CSS 'translate', independent of the float animation)
+
+  function astroSize() { // his untilted on-screen size (CSS width times any 'scale')
+    return parseFloat(getComputedStyle(astro).width) * (parseFloat(astro.style.scale) || 1);
+  }
+  function rectsOverlap(a, b, pad) {
+    return a.left < b.right + pad && a.right > b.left - pad && a.top < b.bottom + pad && a.bottom > b.top - pad;
+  }
+
+  // pick a spot anywhere on the page (page coordinates), pushed away from where he was poked, clear of forms and buttons
+  function driftTarget(ev) {
+    var r = astro.getBoundingClientRect();
+    var sx = window.pageXOffset, sy = window.pageYOffset;
+    var docW = document.documentElement.clientWidth, docH = document.documentElement.scrollHeight;
+    var hud = document.querySelector('.hud').getBoundingClientRect();
+    var m = 16, w = astroSize(), h = w; // real size: the bounding box grows while he tilts
+    var minX = m, maxX = docW - m - w, minY = hud.bottom + sy + m, maxY = docH - m - h;
+    if (maxX <= minX || maxY <= minY) return null;
+    var curL = r.left + r.width / 2 + sx - w / 2, curT = r.top + r.height / 2 + sy - h / 2; // centre-based, so tilting doesn't matter
+    var maxD = Math.max(700, window.innerHeight * 0.9); // one push never goes further than this
+    // poked off-centre = pushed the opposite way (taps have coordinates too); a poke near the middle goes anywhere
+    var vx = (r.left + w / 2) - ev.clientX, vy = (r.top + h / 2) - ev.clientY, vl = Math.hypot(vx, vy);
+    var aimed = (ev.clientX || ev.clientY) && vl > w * 0.12;
+    if (aimed) { vx /= vl; vy /= vl; }
+    if (docked && ship) { // pushed towards the docked ship (or poked when he is already close to it): glide right onto it
+      var sr = ship.getBoundingClientRect();
+      // the dock sits in the very corner of the page, so for this one target he may go right up to the page edge
+      var tx = Math.min(docW - w, Math.max(0, sr.left + sx + sr.width / 2 - w / 2));
+      var ty = Math.min(docH - h, Math.max(minY, sr.top + sy + sr.height / 2 - h / 2));
+      var ddx = tx - curL, ddy = ty - curT, dd = Math.hypot(ddx, ddy);
+      var near = dd <= 350; // close to the ship, any poke will do
+      if (dd > 8 && dd <= maxD * 1.4 && (aimed ? (ddx * vx + ddy * vy) / dd >= (near ? 0 : 0.75) : near)) return { dx: ddx, dy: ddy, h: h, top: ty };
+    }
+    var best = null, bestScore = aimed ? 0.2 : -2; // aimed: must head at least roughly the way he was pushed
+    for (var i = 0; i < 120; i++) {
+      var x = Math.min(maxX, Math.max(minX, curL + (Math.random() * 2 - 1) * maxD));
+      var y = Math.min(maxY, Math.max(minY, curT + (Math.random() * 2 - 1) * maxD));
+      var d = Math.hypot(x - curL, y - curT);
+      if (d < 120 || d > maxD) continue; // a real trip, but not across the whole page in one go
+      var score = aimed ? ((x - curL) * vx + (y - curT) * vy) / d : Math.random();
+      if (score > bestScore) { bestScore = score; best = { dx: x - curL, dy: y - curT, h: h, top: y }; }
+    }
+    return best; // null when cornered: he just wobbles
+  }
+
+  // --- Spaceship: touch it and the astronaut climbs in and flies off; afterwards it cruises through the background ---
+  var ship = document.getElementById('ship');
+  var docked = true, boardTimer = null;
+
+  function inset(r, f) {
+    var dx = r.width * f, dy = r.height * f;
+    return { left: r.left + dx, right: r.right - dx, top: r.top + dy, bottom: r.bottom - dy };
+  }
+  function touchingShip() {
+    var r = astro.getBoundingClientRect(), w = astroSize(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    var body = { left: cx - w * 0.3, right: cx + w * 0.3, top: cy - w * 0.3, bottom: cy + w * 0.3 }; // his body, not the empty corners
+    return docked && ship && rectsOverlap(body, ship.getBoundingClientRect(), -2);
+  }
+
+  function board() {
+    docked = false;
+    clearTimeout(boardTimer);
+    var ar = astro.getBoundingClientRect(), sr = ship.getBoundingClientRect();
+    var cur = (getComputedStyle(astro).translate || '').split(' ').map(parseFloat);
+    var tx = (isNaN(cur[0]) ? 0 : cur[0]) + (sr.left + sr.width / 2) - (ar.left + ar.width / 2);
+    var ty = (isNaN(cur[1]) ? 0 : cur[1]) + (sr.top + sr.height / 2) - (ar.top + ar.height / 2);
+    astro.style.transition = 'translate .55s ease-in, scale .55s ease-in, opacity .55s ease-in';
+    astro.style.translate = tx + 'px ' + ty + 'px';
+    astro.style.scale = 0.08;
+    astro.style.opacity = 0;
+    setTimeout(liftoff, 650);
+  }
+
+  function liftoff() {
+    astro.style.visibility = 'hidden';
+    document.documentElement.classList.add('away');
+    document.dispatchEvent(new Event('away'));
+    ship.classList.add('thrust');
+    var sr = ship.getBoundingClientRect();
+    // all the way up past the TOP OF THE PAGE (page coordinates, not just off the top of the screen); a longer trip takes longer
+    var dist = sr.bottom + window.pageYOffset + 200;
+    var ms = reduce ? 0 : Math.min(7000, 1900 + dist / 2.2);
+    if (ship.animate && !reduce) {
+      ship.animate([
+        { transform: 'translate(0, 0)' },
+        { transform: 'translate(0, 6px)', offset: 0.08 },
+        { transform: 'translate(-30px, ' + (-dist) + 'px) rotate(-8deg)' }
+      ], { duration: ms, easing: 'cubic-bezier(.5, 0, .9, .6)', fill: 'forwards' });
+    }
+    setTimeout(function () {
+      ship.style.visibility = 'hidden';
+      unlock('ship');
+      if (!reduce) startCruise();
+    }, ms);
+  }
+
+  var cruiseEl = null, skyEl = null;
+  function startCruise() {
+    skyEl = document.createElement('div');
+    skyEl.className = 'sky';
+    skyEl.setAttribute('aria-hidden', 'true');
+    cruiseEl = document.createElement('div');
+    cruiseEl.className = 'cruise thrust';
+    cruiseEl.appendChild(ship.querySelector('svg').cloneNode(true));
+    skyEl.appendChild(cruiseEl);
+    document.body.insertBefore(skyEl, document.getElementById('stars').nextSibling); // above the stars, behind the page
+    setTimeout(fly, 3500);
+  }
+  // each flight starts just outside the part of the page you are looking at, but then stays where it is in the page:
+  // scroll away and you leave the ship behind
+  function fly() {
+    if (document.hidden) { setTimeout(fly, 5000); return; }
+    var W = document.documentElement.clientWidth, H = window.innerHeight, oy = window.pageYOffset, M = 90, sx, sy, ex, ey;
+    skyEl.style.height = document.documentElement.scrollHeight + 'px';
+    if (Math.random() < 0.65) { // in from one side, out the other
+      var ltr = Math.random() < 0.5;
+      sx = ltr ? -M : W + M; ex = ltr ? W + M : -M;
+      sy = oy + H * (0.1 + Math.random() * 0.8); ey = oy + H * (0.1 + Math.random() * 0.8);
+    } else {
+      var ttb = Math.random() < 0.5;
+      sy = oy + (ttb ? -M : H + M); ey = oy + (ttb ? H + M : -M);
+      sx = W * (0.1 + Math.random() * 0.8); ex = W * (0.1 + Math.random() * 0.8);
+    }
+    var ang = Math.atan2(ey - sy, ex - sx) * 180 / Math.PI + 90; // the sprite points up
+    var sc = 0.7 + Math.random() * 0.6, dur = 9000 + Math.random() * 7000;
+    function tf(x, y) { return 'translate(' + x + 'px, ' + y + 'px) rotate(' + ang + 'deg) scale(' + sc + ')'; }
+    cruiseEl.style.visibility = 'visible';
+    cruiseEl.animate([{ transform: tf(sx, sy) }, { transform: tf(ex, ey) }], { duration: dur, easing: 'linear', fill: 'forwards' });
+    setTimeout(function () {
+      cruiseEl.style.visibility = 'hidden';
+      setTimeout(fly, 12000 + Math.random() * 16000);
+    }, dur);
+  }
+
   if (astro) {
-    astro.addEventListener('click', function () {
+    astro.addEventListener('click', function (e) {
       unlock('hello');
-      if (astro.getAttribute('data-state') === 'sleep') {
+      var asleep = astro.getAttribute('data-state') === 'sleep';
+      if (asleep) {
         // woken up: annoyed for a few seconds, then back to sleep
         astro.setAttribute('data-state', 'annoyed');
         astro.setAttribute('data-annoyed', '1');
@@ -159,18 +294,30 @@
           astro.removeAttribute('data-annoyed');
           astro.setAttribute('data-state', 'sleep');
         }, 6000);
+        if (astro.animate) astro.animate([{ rotate: '0deg' }, { rotate: '-8deg' }, { rotate: '8deg' }, { rotate: '-5deg' }, { rotate: '0deg' }], { duration: 500 });
+      } else {
+        var t = driftTarget(e);
+        if (t) {
+          // start from where he actually is right now (he may still be mid-glide from the last click)
+          var cur = (getComputedStyle(astro).translate || '').split(' ').map(parseFloat);
+          driftPos.x = (isNaN(cur[0]) ? 0 : cur[0]) + t.dx;
+          driftPos.y = (isNaN(cur[1]) ? 0 : cur[1]) + t.dy;
+          var dist = Math.hypot(t.dx, t.dy), secs = Math.min(3.4, 1.5 + dist / 700);
+          astro.style.transition = 'scale .6s ease-in, translate ' + secs + 's cubic-bezier(.22, .8, .3, 1)';
+          astro.style.translate = driftPos.x + 'px ' + driftPos.y + 'px';
+          clearTimeout(boardTimer);
+          boardTimer = setTimeout(function () { if (touchingShip()) board(); }, secs * 1000 + 150);
+          if (astro.animate) astro.animate([{ rotate: '0deg' }, { rotate: (t.dx > 0 ? 14 : -14) + 'deg', offset: 0.35 }, { rotate: '0deg' }], { duration: secs * 1000, easing: 'ease-in-out' });
+        } else if (astro.animate) { // no room to go anywhere: a little tumble so the click still gets an answer
+          astro.animate([{ rotate: '0deg' }, { rotate: '-12deg' }, { rotate: '10deg' }, { rotate: '0deg' }], { duration: 700, easing: 'ease-in-out' });
+        }
       }
       if (++pokes === 10) {
         unlock('poke');
-        astro.style.scale = 0.15; // zooms away, CSS 'scale' is independent of the hop/float animations
+        astro.style.scale = 0.15; // zooms away, CSS 'scale' is independent of the float and drift
       }
-      astro.classList.remove('hop');
-      void astro.getBoundingClientRect();
-      astro.classList.add('hop');
     });
-    astro.addEventListener('animationend', function (e) {
-      if (e.animationName === 'hop') astro.classList.remove('hop');
-    });
+    window.addEventListener('resize', function () { driftPos.x = driftPos.y = 0; astro.style.translate = ''; }); // back home so he can't end up off-screen
   }
   document.querySelectorAll('a[href*="linkedin.com"], a[href*="github.com"]').forEach(function (a) {
     a.addEventListener('click', function () { unlock('networker'); });
@@ -263,32 +410,58 @@
 // --- Contact + feedback forms (FormSubmit, no backend) ----------------------
 (function () {
   'use strict';
+  var TO = 'daan.lemmens@hotmail.com';
+
   document.querySelectorAll('form.form').forEach(function (form) {
     var status = form.querySelector('.status');
     var btn = form.querySelector('button[type=submit]');
+
+    // when sending fails: say why, and offer a ready-made email so nothing the visitor typed is lost
+    function fail(reason) {
+      if (window.console) console.error('Form send failed:', reason);
+      var data = {};
+      new FormData(form).forEach(function (v, k) { if (k.charAt(0) !== '_') data[k] = v; });
+      var subject = form.dataset.kind === 'feedback' ? 'Feedback on your CV site' : 'Message from your CV site';
+      var body = Object.keys(data).map(function (k) { return k + ': ' + data[k]; }).join('\n');
+      var a = document.createElement('a');
+      a.href = 'mailto:' + TO + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      a.textContent = 'email me instead';
+      status.className = 'status err';
+      status.textContent = 'Could not send (' + reason + '). Please ';
+      status.appendChild(a);
+      status.appendChild(document.createTextNode('.'));
+    }
+
     form.addEventListener('submit', function (e) {
       if (!window.fetch) return; // fall back to a normal POST
       e.preventDefault();
       btn.disabled = true;
       status.className = 'status';
       status.textContent = 'Sending…';
+      var payload = {};
+      new FormData(form).forEach(function (v, k) { payload[k] = v; });
       fetch(form.action.replace('formsubmit.co/', 'formsubmit.co/ajax/'), {
         method: 'POST',
-        headers: { Accept: 'application/json' },
-        body: new FormData(form)
-      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
-        .then(function (res) {
-          if (!res.ok || res.j.success === 'false') throw new Error(res.j.message || 'failed');
-          status.className = 'status ok';
-          status.textContent = form.dataset.kind === 'feedback' ? 'Thanks for the review!' : 'Message sent, thanks!';
-          document.dispatchEvent(new CustomEvent('unlock', { detail: form.dataset.kind === 'feedback' ? 'review' : 'message' }));
-          form.reset();
-        })
-        .catch(function () {
-          status.className = 'status err';
-          status.textContent = 'Could not send. Please email me directly instead.';
-        })
-        .then(function () { btn.disabled = false; });
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function (r) {
+        return r.text().then(function (t) {
+          var j = {};
+          try { j = JSON.parse(t); } catch (err) {}
+          return { ok: r.ok, status: r.status, j: j };
+        });
+      }).then(function (res) {
+        if (!res.ok || String(res.j.success) === 'false') {
+          fail(res.j.message || ('HTTP ' + res.status));
+          return;
+        }
+        status.className = 'status ok';
+        status.textContent = form.dataset.kind === 'feedback' ? 'Thanks for the review!' : 'Message sent, thanks!';
+        document.dispatchEvent(new CustomEvent('unlock', { detail: form.dataset.kind === 'feedback' ? 'review' : 'message' }));
+        form.reset();
+      }).catch(function (err) {
+        fail(err && err.message ? err.message : 'network error');
+      }).then(function () { btn.disabled = false; });
     });
   });
 })();
@@ -321,10 +494,12 @@
     if (astro && !astro.hasAttribute('data-annoyed')) astro.setAttribute('data-state', state);
     var local = /^(localhost|127\.0\.0\.1|\[::1\])?$/.test(window.location.hostname); // '' = file://
     if (state === 'sleep' && (!q.get('time') || local)) document.dispatchEvent(new CustomEvent('unlock', { detail: 'nightowl' }));
+    if (document.documentElement.classList.contains('away')) what = 'away, exploring the cosmos';
     el.textContent = 'Status: ' + what + ' · ' + hh + ':' + mm + ' in Belgium';
   }
   update();
   setInterval(update, 30000);
+  document.addEventListener('away', update);
 })();
 
 // --- Decode-on-load: header and hero text start as Aurebesh, then flip to English --------

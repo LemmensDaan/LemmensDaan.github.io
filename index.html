@@ -42,6 +42,7 @@
         <li data-id="betatester"><b>Beta tester</b><span>Open the SWN Builder live app</span></li>
         <li data-id="stargazer"><b>Stargazer</b><span>Stay on the page for a full minute</span></li>
         <li data-id="wake"><b>Rude awakening</b><span>Wake the sleeping astronaut</span></li>
+        <li data-id="ship"><b>Lift-off</b><span>Help the astronaut reach his spaceship</span></li>
         <li data-id="konami" data-secret="1"><b>???</b><span>A secret. Hint: Konami</span></li>
         <li data-id="completionist"><b>Completionist</b><span>Unlock every other achievement</span></li>
       </ul>
@@ -267,11 +268,11 @@
           <p class="hint">Tell me what you think, good or bad. It lands in my inbox and isn't shown on the page.</p>
           <fieldset class="stars">
             <legend>Rating</legend>
-            <input type="radio" name="rating" id="r5" value="5" required><label for="r5" title="5 stars">★</label>
+            <div class="starrow"><input type="radio" name="rating" id="r5" value="5" required><label for="r5" title="5 stars">★</label>
             <input type="radio" name="rating" id="r4" value="4"><label for="r4" title="4 stars">★</label>
             <input type="radio" name="rating" id="r3" value="3"><label for="r3" title="3 stars">★</label>
             <input type="radio" name="rating" id="r2" value="2"><label for="r2" title="2 stars">★</label>
-            <input type="radio" name="rating" id="r1" value="1"><label for="r1" title="1 star">★</label>
+            <input type="radio" name="rating" id="r1" value="1"><label for="r1" title="1 star">★</label></div>
           </fieldset>
           <label>Comment (optional) <textarea name="comment" rows="4"></textarea></label>
           <label>Name (optional) <input name="name" autocomplete="name"></label>
@@ -284,6 +285,17 @@
       </div>
     </section>
   </main>
+
+  <div class="ship" id="ship" aria-hidden="true">
+    <svg viewBox="0 0 10 17" shape-rendering="crispEdges">
+      <g class="flame"><rect x="4" y="13" width="2" height="2" fill="#ffc857"/><rect x="4" y="15" width="2" height="2" fill="#ff6b5e"/></g>
+      <rect x="3" y="0" width="4" height="1" fill="#e8ecff"/><rect x="2" y="1" width="6" height="1" fill="#e8ecff"/><rect x="1" y="2" width="8" height="9" fill="#e8ecff"/>
+      <rect x="0" y="9" width="2" height="4" fill="#3b4a94"/><rect x="8" y="9" width="2" height="4" fill="#3b4a94"/>
+      <rect x="1" y="9" width="8" height="1" fill="#4a2a80"/>
+      <rect x="3" y="3" width="4" height="4" fill="#0b1030"/><rect x="4" y="4" width="2" height="2" fill="#3fe0c5"/>
+      <rect x="3" y="11" width="4" height="2" fill="#c7cdf0"/>
+    </svg>
+  </div>
 
   <div id="toast" role="status" aria-live="polite"></div>
   <script src="js/main.js"></script>

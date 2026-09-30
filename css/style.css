@@ -43,7 +43,7 @@ main { max-width: 1040px; margin: 0 auto; padding: 0 16px 80px; }
 .hud-burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
 
 /* Hero */
-.hero { min-height: 100vh; display: flex; align-items: center; gap: 48px; padding-top: 80px; }
+.hero { position: relative; min-height: 100vh; display: flex; align-items: center; gap: 48px; padding-top: 80px; }
 .hero-text { flex: 1; }
 .kicker { font-family: var(--mono); color: var(--teal); margin: 0 0 8px; }
 h1 { font-size: clamp(2.6rem, 8vw, 5rem); line-height: 1.05; margin: 0; letter-spacing: -.02em; }
@@ -151,7 +151,7 @@ h3 em { font-style: normal; color: var(--teal); font-size: .95rem; font-family: 
 }
 
 /* Forms */
-.forms { margin-top: 32px; align-items: start; }
+.forms { margin-top: 32px; align-items: stretch; }
 .form { gap: 12px; }
 .form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
 .form input:not([type=radio]):not([type=hidden]), .form textarea {
@@ -166,8 +166,9 @@ h3 em { font-style: normal; color: var(--teal); font-size: .95rem; font-family: 
 .status { min-height: 1.4em; margin: 0; font-family: var(--mono); font-size: 13px; }
 .status.ok { color: var(--teal) !important; }
 .status.err { color: var(--coral) !important; }
-.stars { border: 0; padding: 0; margin: 0; display: flex; flex-direction: row-reverse; justify-content: flex-end; }
-.stars legend { float: left; width: 100%; font-size: 14px; color: var(--muted); padding: 0; margin-bottom: 2px; }
+.stars { border: 0; padding: 0; margin: 0; }
+.stars legend { font-size: 14px; color: var(--muted); padding: 0; margin-bottom: 2px; }
+.starrow { display: flex; flex-direction: row-reverse; justify-content: flex-end; }
 .stars input { position: absolute; opacity: 0; }
 .stars label { font-size: 30px; line-height: 1; color: rgba(255, 255, 255, .2); cursor: pointer; flex-direction: row; padding: 0 2px; }
 .stars label:hover, .stars label:hover ~ label, .stars input:checked ~ label { color: var(--gold); }
@@ -214,11 +215,9 @@ h3 em { font-style: normal; color: var(--teal); font-size: .95rem; font-family: 
 
 /* Clickable astronaut */
 .astro { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.astro.hop { animation: hop .7s ease-out; }
-@keyframes hop { 0% { transform: none; } 30% { transform: translateY(-44px); } 55% { transform: translateY(0); } 70% { transform: translateY(-12px); } 85% { transform: translateY(0); } 100% { transform: none; } }
-@media (prefers-reduced-motion: reduce) { .astro.hop { animation: none; } }
 .achv-panel .achv-grid li { padding: 10px 14px; }
-.astro { transition: scale .6s ease-in; }
+.astro { transition: scale .6s ease-in, translate 1.8s cubic-bezier(.22, .8, .3, 1); }
+@media (prefers-reduced-motion: reduce) { .astro { transition: none; } }
 .astro[data-state="annoyed"] .visor { fill: #ff8066; }
 .anger { animation: anger .5s ease-in-out infinite alternate; }
 @keyframes anger { to { transform: scale(1.25); transform-box: fill-box; transform-origin: center; } }
@@ -239,3 +238,26 @@ h3 em { font-style: normal; color: var(--teal); font-size: .95rem; font-family: 
 .cursor.typing { animation: none; }
 @keyframes blink { 50% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .cursor { animation: none; } }
+
+/* Equal-height forms: text areas soak up the spare room, buttons sit on the same line at the bottom */
+.form label:has(textarea) { flex: 1; }
+.form textarea { flex: 1; min-height: 110px; resize: vertical; }
+.form .btn { margin-top: auto; }
+
+/* Spaceship: docked bottom right of the first screen (top right on phones), later cruises through the background */
+.ship { position: absolute; right: 14px; bottom: 14px; width: 38px; z-index: 2; pointer-events: none; filter: drop-shadow(0 0 10px rgba(63, 224, 197, .45)); animation: shipglow 3s ease-in-out infinite; }
+.ship svg, .cruise svg { display: block; width: 100%; overflow: visible; }
+.flame { display: none; }
+.thrust .flame { display: inline; animation: flicker .12s steps(2) infinite; }
+@keyframes flicker { 50% { opacity: .55; } }
+@keyframes shipglow { 50% { filter: drop-shadow(0 0 16px rgba(63, 224, 197, .8)); } }
+.cruise { position: absolute; left: 0; top: 0; width: 34px; z-index: 0; pointer-events: none; visibility: hidden; opacity: .85; filter: drop-shadow(0 0 8px rgba(63, 224, 197, .4)); }
+@media (prefers-reduced-motion: reduce) { .ship { animation: none; } .thrust .flame { animation: none; } }
+.status a { color: inherit; }
+#contact { position: relative; }
+/* the background ship lives in page space: scroll away and you leave it behind */
+.sky { position: absolute; top: 0; left: 0; width: 100%; overflow: hidden; pointer-events: none; z-index: 0; }
+/* the astronaut floats over the whole page, but only his body catches clicks */
+.astro { position: relative; z-index: 5; pointer-events: none; }
+.astro * { pointer-events: auto; }
+body { position: relative; } /* absolute things (dock, background ship) are placed in page space */
