@@ -63,6 +63,8 @@
         <li data-id="stargazer"><b>Stargazer</b><span>Stayed on the page for a full minute</span></li>
         <li data-id="wake"><b>Rude awakening</b><span>Wow, really..</span></li>
         <li data-id="ship"><b>Lift-off</b><span>Helped the astronaut reach his spaceship</span></li>
+        <li data-id="nat20"><b>Critical Hit!</b><span>Rolled a twenty on the dice</span></li>
+        <li data-id="lost"><b>Off the map</b><span>Found a page that does not exist</span></li>
         <li data-id="konami" data-secret="1"><b>???</b><span>A secret. Hint: Konami. Tap to open a controller.</span><label class="warp-toggle" id="warp-toggle-wrap" hidden><input type="checkbox" id="warp-toggle"> Warp mode</label>
           <div class="pad" id="pad" hidden>
             <div class="pad-dpad">
@@ -115,6 +117,12 @@
           <g class="ov ov-annoyed"><g fill="#0b1030"><rect x="5" y="5" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="10" y="5" width="1" height="1"/><rect x="9" y="6" width="1" height="1"/></g><g class="anger" fill="#ff6b5e"><rect x="14" y="-4" width="1" height="3"/><rect x="13" y="-3" width="3" height="1"/></g></g>
         </svg>
         <p class="tag">Commander D. Lemmens<br><span id="status">Status: …</span></p>
+        <p class="telemetry" id="telemetry" hidden>
+          <span id="tele-space"></span>
+          <span id="tele-kp" class="meter kp" hidden title="Planetary K index, 0 to 9. Geomagnetic storms start at Kp 5 (G1)."></span>
+          <span id="tele-iss"></span>
+          <span id="tele-range" class="meter range" hidden title="How close the station is: full bars overhead, empty when it is on the far side of the planet."></span>
+        </p>
       </div>
     </section>
 
@@ -303,7 +311,7 @@
         <article class="quest">
           <h3>Off-duty</h3>
           <ul class="chips" aria-label="Interests">
-            <li>Gaming</li><li>D&amp;D · tabletop RPGs</li><li>Music</li><li>Hobby projects</li><li>Running</li>
+            <li>Gaming</li><li class="d20-chip"><button type="button" id="d20" title="Roll a d20">D&amp;D · TTRPGs</button></li><li>Space</li><li>Music</li><li>Hobby projects</li><li>Running</li>
           </ul>
           <p>Youth leader at Fanfare Sint-Dionysius Opoeteren from 2016 to 2023. I helped organise an annual youth camp and activities throughout the year.</p>
           <p>Certified company first aider (Red Cross Flanders, 2019) - expired.</p>

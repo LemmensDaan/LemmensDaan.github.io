@@ -14,3 +14,9 @@ Personal CV site: plain HTML, CSS and JS, no build step.
 - SWN Builder's first tile plays `img/swn/demo.gif` (the 30s walkthrough). Drop the gif in under that
   name and it works; until then the tile removes itself the first time it is opened. The strip shows a
   normal webp thumbnail for it, so the gif only downloads when someone clicks.
+- `404.html` is served by GitHub Pages for any unknown path, so its links and assets use absolute
+  paths (`/css/style.css`, `/`). It carries its own trimmed starfield rather than loading `main.js`, and writes the "Off the map"
+  achievement straight into the shared `dl-achievements` localStorage key.
+- The telemetry line under the astronaut reads two public, key-less feeds: NOAA SWPC
+  (`/products/summary/solar-wind-speed.json` and `/products/noaa-planetary-k-index.json`) and
+  `api.wheretheiss.at`. If a feed is down its line is left out; no key or proxy is involved.

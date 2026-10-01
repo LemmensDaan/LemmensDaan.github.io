@@ -66,14 +66,19 @@
 
   var toastQueue = [], toastBusy = false;
   function notify(msg, icon) {
-    toastQueue.push((icon || '★') + ' ' + msg);
+    toastQueue.push({ icon: icon || '★', msg: msg });
     if (!toastBusy) nextToast();
   }
   function nextToast() {
-    var msg = toastQueue.shift();
-    if (!msg) { toastBusy = false; return; }
+    var item = toastQueue.shift();
+    if (!item) { toastBusy = false; return; }
     toastBusy = true;
-    toast.textContent = msg;
+    toast.textContent = '';
+    var mark = document.createElement('i');
+    mark.className = 'toast-icon';
+    mark.textContent = item.icon;
+    toast.appendChild(mark);
+    toast.appendChild(document.createTextNode(item.msg));
     toast.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () {
@@ -132,6 +137,15 @@
   }
   document.addEventListener('unlock', function (e) { unlock(e.detail); });
   render();
+
+  // The 404 page writes to the same store without loading this script, so the last tile can
+  // already be filled in by the time we get here: re-check the cascade once on load.
+  (function () {
+    var rest = Array.prototype.filter.call(document.querySelectorAll('.achv-grid li'), function (li) {
+      return li.getAttribute('data-id') !== 'completionist' && !unlocked[li.getAttribute('data-id')];
+    });
+    if (!rest.length) unlock('completionist');
+  })();
 
   var warpBox = document.getElementById('warp-toggle');
   if (warpBox) {
@@ -373,6 +387,36 @@
     a.addEventListener('click', function () { unlock('betatester'); });
   });
   setTimeout(function () { unlock('stargazer'); }, 60000);
+
+  // --- d20 on the D&D chip --------------------------------------------------
+  var d20 = document.getElementById('d20');
+  if (d20) {
+    var chip = d20.parentNode, label = d20.textContent, spin, back;
+    var roll = function () { return 1 + Math.floor(Math.random() * 20); };
+    var settle = function (n) {
+      d20.textContent = '\uD83C\uDFB2 ' + n;
+      chip.classList.remove('rolling');
+      if (n === 20) { chip.classList.add('nat20'); notify('Natural 20. That\'s a critical hit!', '\uD83C\uDFB2'); unlock('nat20'); }
+      else if (n === 1) { chip.classList.add('nat1'); notify('Natural 1. Straight to dice jail.', '\uD83C\uDFB2'); }
+      back = setTimeout(function () {
+        d20.textContent = label;
+        chip.classList.remove('nat20', 'nat1');
+      }, 2800);
+    };
+    d20.addEventListener('click', function () {
+      clearInterval(spin); clearTimeout(back);
+      chip.classList.remove('nat20', 'nat1');
+      if (reduce) { settle(roll()); return; } // no tumbling for anyone who asked for stillness
+      chip.classList.add('rolling');
+      var n = 0;
+      spin = setInterval(function () {
+        d20.textContent = '\uD83C\uDFB2 ' + roll();
+        if (++n < 9) return;
+        clearInterval(spin);
+        settle(roll());
+      }, 55);
+    });
+  }
 
   // The CV is being rewritten, so the download button says so instead of handing over a stale PDF.
   var CV_LINES = [
@@ -831,4 +875,215 @@
     var list = shots();
     if (list[at]) list[at].focus();
   });
+})();
+
+// --- Live telemetry: solar wind, the planetary K index, and where the ISS is ----
+// Two public, key-less feeds. Each line starts as Aurebesh static and decodes into English the
+// moment its reading lands, the same way the hero text does on load. A feed that never answers
+// has its line dropped rather than left spinning, and if neither answers nothing is shown at all.
+(function () {
+  'use strict';
+  if (document.documentElement.classList.contains('plain')) return; // plain mode hides the whole avatar column
+  var box = document.getElementById('telemetry');
+  if (!box || !window.fetch) return;
+  var spaceEl = document.getElementById('tele-space');
+  var issEl = document.getElementById('tele-iss');
+  var kpEl = document.getElementById('tele-kp');
+  var rangeEl = document.getElementById('tele-range');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Nine segments, one per Kp step. Each carries its own band colour from the start, so the
+  // meter shows where the storm thresholds sit rather than only how far along we are.
+  var KP_STEPS = 9, kpShown = false;
+  if (kpEl) {
+    for (var kpI = 1; kpI <= KP_STEPS; kpI++) {
+      var pip = document.createElement('i');
+      pip.className = kpI >= 7 ? 'storm' : (kpI >= 5 ? 'warn' : 'calm');
+      kpEl.appendChild(pip);
+    }
+  }
+  function showKp(kp) {
+    if (!kpEl) return;
+    var lit = Math.max(0, Math.min(KP_STEPS, Math.floor(kp)));
+    Array.prototype.forEach.call(kpEl.children, function (pip, i) {
+      pip.classList.toggle('on', i < lit);
+    });
+    kpEl.hidden = false;
+  }
+
+  // Rising bars for how close the station is. 20015 km is the distance from any point on the
+  // surface to its antipode, so that is an empty meter; directly overhead fills it.
+  var RANGE_BARS = 8, ANTIPODE = 20015, rangeShown = false;
+  if (rangeEl) {
+    for (var rI = 0; rI < RANGE_BARS; rI++) rangeEl.appendChild(document.createElement('i'));
+  }
+  function showRange(away, horizon) {
+    if (!rangeEl) return;
+    var lit = Math.round(Math.max(0, Math.min(1, 1 - away / ANTIPODE)) * RANGE_BARS);
+    rangeEl.classList.toggle('overhead', away <= horizon);
+    Array.prototype.forEach.call(rangeEl.children, function (bar, i) {
+      bar.classList.toggle('on', i < lit);
+    });
+    rangeEl.hidden = false;
+  }
+
+  var POOL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  function noise(n) {
+    var s = '';
+    for (var i = 0; i < n; i++) s += POOL.charAt(Math.floor(Math.random() * POOL.length));
+    return s;
+  }
+
+  // the .dw / .a scaffold the stylesheet already knows how to draw: an inline-block of fixed
+  // width holding a decoded run and a pending run, so nothing reflows mid-animation
+  function scaffold(el) {
+    var wrap = document.createElement('span');
+    wrap.className = 'dw';
+    var lit = document.createElement('span');
+    var pend = document.createElement('span');
+    wrap.appendChild(lit);
+    wrap.appendChild(pend);
+    el.textContent = '';
+    el.appendChild(wrap);
+    return { wrap: wrap, lit: lit, pend: pend };
+  }
+
+  function aurebesh(pend, str) {
+    pend.textContent = '';
+    str.split(/([A-Za-z0-9]+)/).forEach(function (part) {
+      if (!part) return;
+      if (/^[A-Za-z0-9]+$/.test(part)) {
+        var a = document.createElement('span');
+        a.className = 'a';
+        a.textContent = part;
+        pend.appendChild(a);
+      } else {
+        pend.appendChild(document.createTextNode(part));
+      }
+    });
+  }
+
+  // Aurebesh glyphs are wider than the Latin ones: shrink them to the width the English will take
+  function fit(pend, target) {
+    var pw = pend.getBoundingClientRect().width, lw = 0;
+    Array.prototype.forEach.call(pend.querySelectorAll('.a'), function (a) {
+      lw += a.getBoundingClientRect().width;
+    });
+    var sc = (lw > 0 && pw > target) ? (target - (pw - lw)) / lw : 1;
+    pend.style.setProperty('--s', Math.min(1, Math.max(sc, 0.4)));
+  }
+
+  function waiting(el, n) {
+    var p = scaffold(el);
+    aurebesh(p.pend, noise(n));
+    if (reduce) return function () {};
+    var t = setInterval(function () { aurebesh(p.pend, noise(n)); }, 110);
+    return function () { clearInterval(t); };
+  }
+
+  function decode(el, text, dur) {
+    var probe = document.createElement('span');
+    probe.className = 'dw';
+    probe.textContent = text;
+    el.textContent = '';
+    el.appendChild(probe);
+    var target = probe.getBoundingClientRect().width; // the finished line, measured before anything moves
+
+    var p = scaffold(el);
+    p.wrap.style.width = target + 'px';
+    aurebesh(p.pend, text);
+    fit(p.pend, target);
+
+    var t0 = null;
+    function tick(ts) {
+      if (t0 === null) t0 = ts;
+      var k = Math.min(text.length, Math.round((ts - t0) / dur * text.length));
+      p.lit.textContent = text.slice(0, k);
+      aurebesh(p.pend, text.slice(k));
+      if (k < text.length) requestAnimationFrame(tick);
+      else el.textContent = text; // done: collapse the scaffold back to plain text
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // Each line owns its own loading state. The returned function takes the first reading and
+  // decodes into it; later refreshes just swap the value, so it does not re-animate every 30s.
+  function channel(el, chars) {
+    var stop = waiting(el, chars);
+    var settled = false;
+    var giveUp = setTimeout(function () {
+      if (settled) return;
+      stop();
+      el.textContent = '';
+      if (!spaceEl.textContent && !issEl.textContent) box.hidden = true;
+    }, 12000);
+    return function (text) {
+      if (settled) { el.textContent = text; return; }
+      settled = true;
+      clearTimeout(giveUp);
+      stop();
+      if (reduce) { el.textContent = text; return; }
+      decode(el, text, 900);
+    };
+  }
+
+  var setSpace = channel(spaceEl, 26);
+  var setIss = channel(issEl, 34);
+  box.hidden = false;
+
+  function getJSON(url) {
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    });
+  }
+
+  // NOAA SWPC: a one-row summary carries the wind speed, and the three-hourly planetary
+  // K index series carries the current value as its last row.
+  function space() {
+    Promise.all([
+      getJSON('https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json'),
+      getJSON('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json')
+    ]).then(function (r) {
+      var speed = Math.round(r[0][0].proton_speed);
+      var rows = r[1];
+      var kp = rows.length ? Number(rows[rows.length - 1].Kp) : NaN;
+      if (!isFinite(speed) || !isFinite(kp)) return;
+      // NOAA's G scale: a storm only starts at Kp 5, and G5 is the top of it
+      var g = kp >= 5 ? ' · G' + Math.min(5, Math.floor(kp) - 4) + ' storm' : '';
+      setSpace('Solar wind ' + speed + ' km/s · Kp ' + kp.toFixed(1).replace(/\.0$/, '') + g);
+      // the meter waits for the line to finish decoding, then lights up underneath it
+      if (kpShown) showKp(kp);
+      else { kpShown = true; setTimeout(function () { showKp(kp); }, reduce ? 0 : 950); }
+    }).catch(function () {});
+  }
+
+  var BRUSSELS = { lat: 50.85, lon: 4.35 };
+  function kmApart(a, b) { // haversine; plenty accurate for a caption
+    var R = 6371, d = Math.PI / 180;
+    var dLat = (b.lat - a.lat) * d, dLon = (b.lon - a.lon) * d;
+    var x = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(a.lat * d) * Math.cos(b.lat * d) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return Math.round(2 * R * Math.asin(Math.min(1, Math.sqrt(x))));
+  }
+
+  function iss() {
+    getJSON('https://api.wheretheiss.at/v1/satellites/25544').then(function (p) {
+      if (!isFinite(p.altitude) || !isFinite(p.latitude)) return;
+      var away = kmApart(BRUSSELS, { lat: p.latitude, lon: p.longitude });
+      // the feed gives the footprint as a diameter; half of it is how far the station can be
+      // and still be above the horizon from here
+      var horizon = isFinite(p.footprint) ? p.footprint / 2 : 2250;
+      setIss('ISS ' + Math.round(p.altitude) + ' km up, ' +
+        away.toLocaleString('en-GB') + ' km from Belgium' +
+        (away <= horizon ? ' · above the horizon' : ''));
+      if (rangeShown) showRange(away, horizon);
+      else { rangeShown = true; setTimeout(function () { showRange(away, horizon); }, reduce ? 0 : 950); }
+    }).catch(function () {});
+  }
+
+  space();
+  iss();
+  setInterval(space, 600000); // the K index moves in three-hour steps; ten minutes is generous
+  setInterval(iss, 30000);    // the station covers roughly 230 km in that time
 })();

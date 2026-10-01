@@ -180,7 +180,7 @@ h3 em { font-style: normal; color: var(--teal); font-size: .95rem; font-family: 
 .achv-grid b { font-family: var(--mono); font-size: 14px; }
 .achv-grid span { font-size: 14px; color: var(--muted); }
 .achv-grid li.on { opacity: 1; border: 1px solid var(--gold); }
-.achv-grid li.on b::before { content: '\2605 '; color: var(--gold); }
+.achv-grid li.on b::before { content: '\2605'; margin-right: 7px; color: var(--gold); }
 .achv-count { font-family: var(--mono); font-size: 13px; color: var(--muted); margin-top: 14px; }
 
 /* Astronaut states */
@@ -384,3 +384,55 @@ body { position: relative; } /* absolute things (dock, background ship) are plac
 /* The CV button is a real button, not a link: match the anchors it sits next to, and look unfinished */
 .btn.cv-wip { line-height: 1.6; cursor: pointer; border-style: dashed; }
 .btn.cv-wip:hover, .btn.cv-wip:focus-visible { border-color: var(--gold); color: var(--gold); }
+
+/* Live telemetry under the astronaut: stays out of the way until a reading arrives */
+.telemetry { font-family: var(--mono); font-size: 11.5px; color: var(--muted); margin: 8px 0 0; line-height: 1.55; }
+.telemetry[hidden] { display: none; }
+/* direct children only: the decoder builds .dw / .a spans inside these, and they must keep
+   their own display and line-height or the lines collapse and overlap */
+.telemetry > span { display: block; min-height: 1.55em; }
+.telemetry > span:empty { display: none; }
+
+/* The D&D chip rolls a d20 */
+.chips .d20-chip { padding: 0; }
+.chips .d20-chip button { font: inherit; color: inherit; background: none; border: 0; padding: 3px 12px; border-radius: 99px; cursor: pointer; }
+.chips .d20-chip button:hover, .chips .d20-chip button:focus-visible { color: var(--gold); }
+.chips .d20-chip.rolling { border-color: var(--gold); }
+.chips .d20-chip.rolling button { color: var(--gold); }
+.chips .d20-chip.nat20 { border-color: var(--gold); background: rgba(255, 200, 87, .12); }
+.chips .d20-chip.nat20 button { color: var(--gold); text-shadow: 0 0 10px var(--gold); }
+.chips .d20-chip.nat1 { border-color: var(--coral); background: rgba(255, 107, 94, .12); }
+.chips .d20-chip.nat1 button { color: var(--coral); }
+
+/* the toast's star or die sits off the text rather than against it */
+#toast .toast-icon { font-style: normal; margin-right: 8px; }
+
+/* Each meter sits directly under its own reading, with the gap below it, so it groups with
+   the line it belongs to instead of the one underneath. */
+.telemetry > .meter { display: flex; justify-content: center; min-height: 0; margin: 3px 0 8px; }
+.telemetry > .meter:last-child { margin-bottom: 0; }
+.meter i { background: rgba(255, 255, 255, .13); border-radius: 1px; transition: background .4s, box-shadow .4s; }
+@media (prefers-reduced-motion: reduce) { .meter i { transition: none; } }
+
+/* Kp: nine equal segments for Kp 1-9, each carrying its band colour from the start, so the
+   storm thresholds stay visible on a quiet day. Teal calm, gold G1-G2, coral G3 and up. */
+.kp { gap: 3px; }
+.kp i { width: 9px; height: 5px; }
+.kp i.on.calm { background: var(--teal); box-shadow: 0 0 5px rgba(63, 224, 197, .7); }
+.kp i.on.warn { background: var(--gold); box-shadow: 0 0 5px rgba(255, 200, 87, .7); }
+.kp i.on.storm { background: var(--coral); box-shadow: 0 0 5px rgba(255, 107, 94, .7); }
+
+/* Range: rising bars, read like signal strength. Full means the station is overhead, empty
+   means it is at the antipode. Deliberately a different shape from the Kp row. */
+.range { gap: 3px; align-items: flex-end; }
+.range i { width: 4px; }
+.range i:nth-child(1) { height: 3px; }
+.range i:nth-child(2) { height: 4px; }
+.range i:nth-child(3) { height: 5px; }
+.range i:nth-child(4) { height: 6px; }
+.range i:nth-child(5) { height: 7px; }
+.range i:nth-child(6) { height: 8px; }
+.range i:nth-child(7) { height: 9px; }
+.range i:nth-child(8) { height: 10px; }
+.range i.on { background: var(--teal); box-shadow: 0 0 5px rgba(63, 224, 197, .7); }
+.range.overhead i.on { background: var(--gold); box-shadow: 0 0 6px rgba(255, 200, 87, .85); }
