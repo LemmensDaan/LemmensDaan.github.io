@@ -3,9 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Daan Lemmens · Full Stack Developer</title>
+  <title>Daan Lemmens</title>
   <meta name="description" content="Daan Lemmens, full stack developer in Belgium. Mission log, side quests and skill tree.">
   <meta name="theme-color" content="#070a1a">
+  <link rel="canonical" href="https://lemmensdaan.github.io/">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+  <!-- Share card: what LinkedIn, Slack, WhatsApp and the rest show when this link is pasted. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Daan Lemmens">
+  <meta property="og:url" content="https://lemmensdaan.github.io/">
+  <meta property="og:title" content="Daan Lemmens · Full Stack Developer">
+  <meta property="og:description" content="Full stack developer in Belgium. Mission log, side quests and skill tree.">
+  <meta property="og:image" content="https://lemmensdaan.github.io/img/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Pixel-art astronaut on a starfield, next to the name Daan Lemmens, Full Stack Developer.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Daan Lemmens · Full Stack Developer">
+  <meta name="twitter:description" content="Full stack developer in Belgium. Mission log, side quests and skill tree.">
+  <meta name="twitter:image" content="https://lemmensdaan.github.io/img/og.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -145,7 +164,7 @@
             <p class="meta">Oct 2019 – Apr 2020 · Leuven</p>
             <h3>Intern, then Front End Developer <em>Cumul.io</em></h3>
             <ul>
-              <li>Built an Angular library that embeds Cumul.io dashboards in a few lines of code, now used by customers. Wrote the tutorial and functional analysis</li>
+              <li>Built an Angular library that embeds Cumul.io dashboards in a few lines of code, and wrote the tutorial and functional analysis that shipped with it</li>
               <li>Migrated large parts of the Cumul.io Academy from AngularJS to Angular</li>
             </ul>
           </div>
@@ -163,6 +182,32 @@
           <h3>SWN Builder</h3>
           <p>A web companion for the tabletop RPG <em>Stars Without Number</em>: characters, ships and mechs, factions, sector and galaxy generation, a GM toolkit and PDF sheet export. Includes 3D procedural planets, offline PWA mode and Google Drive backup.</p>
           <p class="stack">React 19 · TypeScript · Vite · Three.js · Zustand · Cloudflare Pages</p>
+          <div class="shots" id="swn-shots">
+            <button class="shot" type="button" data-src="img/swn/galaxy.webp" data-cap="Galaxy view: sectors placed across a procedurally generated galaxy">
+              <img src="img/swn/galaxy-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="A procedurally generated low-poly galaxy rendered in 3D, with satellite galaxies in the distance.">
+              <span>Galaxy</span>
+            </button>
+            <button class="shot" type="button" data-src="img/swn/sector.webp" data-cap="A generated sector: 31 star systems across an 8 × 10 hex grid">
+              <img src="img/swn/sector-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="A hex grid sector map tilted in perspective, with coloured stars scattered across the hexes.">
+              <span>Sector</span>
+            </button>
+            <button class="shot" type="button" data-src="img/swn/system.webp" data-cap="System contents: stars, planets, moons, stations and jump gates">
+              <img src="img/swn/system-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="The system editor panel listing a primary star, planets and their moons beside the sector map.">
+              <span>System</span>
+            </button>
+            <button class="shot" type="button" data-src="img/swn/planet.webp" data-cap="3D system view, with procedurally generated planets and rings">
+              <img src="img/swn/planet-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="A low-poly orange gas giant with wide rings and two moons, rendered in 3D.">
+              <span>Planets</span>
+            </button>
+            <button class="shot" type="button" data-src="img/swn/planet-spin.webp" data-cap="Orbiting the camera around a gas giant — the full animation loads when you open it">
+              <img src="img/swn/planet-spin-poster.webp" width="620" height="373" loading="lazy" decoding="async" alt="The same gas giant seen from a lower angle, its rings tilted across the screen.">
+              <span>Orbit</span>
+            </button>
+            <button class="shot" type="button" data-src="img/swn/character.webp" data-cap="The ten-step character creator">
+              <img src="img/swn/character-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="The character creator on its Identity step, with name, homeworld and goal fields.">
+              <span>Characters</span>
+            </button>
+          </div>
           <p class="links"><a href="https://swn-builder.pages.dev/" rel="noopener">Live app</a> <span class="private">Access required · <a href="#contact">contact me for access</a></span></p>
         </article>
         <article class="quest">
@@ -309,6 +354,14 @@
       <rect x="3" y="11" width="4" height="2" fill="#c7cdf0"/>
     </svg>
   </div>
+
+  <dialog id="lightbox" class="lightbox" aria-label="Screenshot viewer">
+    <button class="lb-close" type="button" aria-label="Close">&#10005;</button>
+    <button class="lb-nav lb-prev" type="button" aria-label="Previous">&#8249;</button>
+    <img id="lb-img" alt="">
+    <p id="lb-cap"></p>
+    <button class="lb-nav lb-next" type="button" aria-label="Next">&#8250;</button>
+  </dialog>
 
   <div id="toast" role="status" aria-live="polite"></div>
   <script src="js/main.js"></script>
