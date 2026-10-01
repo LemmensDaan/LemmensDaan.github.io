@@ -614,7 +614,7 @@
     });
     ready();
 
-    var t0 = null, TYPE_START = 700, TYPE_MS = 55, HOLD = 1300;
+    var t0 = null, TYPE_START = 700, TYPE_MS = 55, HOLD = 400;
     var PAUSE = TYPE_START + kickFull.length * TYPE_MS + HOLD; // translation waits until the line is typed and the cursor has blinked a while
     function setPending(p, str) {
       p.textContent = '';
@@ -674,4 +674,80 @@
     }
     requestAnimationFrame(tick);
   }
+})();
+
+// --- Screenshot lightbox ----------------------------------------------------
+(function () {
+  'use strict';
+  var dlg = document.getElementById('lightbox');
+  var shots = Array.prototype.slice.call(document.querySelectorAll('.shot'));
+  if (!dlg || !shots.length || !dlg.showModal) return; // without <dialog> the thumbnails simply do nothing
+
+  var img = document.getElementById('lb-img');
+  var vid = document.getElementById('lb-vid');
+  var cap = document.getElementById('lb-cap');
+  var at = 0;
+
+  function stopVideo() {
+    if (!vid) return;
+    vid.pause();
+    vid.removeAttribute('src');
+    vid.load(); // drop the buffered data instead of leaving it downloading in the background
+    vid.hidden = true;
+  }
+
+  function show(i) {
+    at = (i + shots.length) % shots.length;
+    var btn = shots[at];
+    var thumb = btn.querySelector('img');
+    var src = btn.getAttribute('data-src');
+    if (/\.(mp4|webm)$/i.test(src)) {
+      img.hidden = true;
+      img.removeAttribute('src');
+      vid.hidden = false;
+      vid.poster = btn.getAttribute('data-poster') || '';
+      vid.src = src;
+      vid.play().catch(function () {}); // autoplay can be refused; the controls still work
+    } else {
+      stopVideo();
+      img.hidden = false;
+      img.src = src;
+      img.alt = thumb ? thumb.alt : '';
+    }
+    cap.textContent = btn.getAttribute('data-cap') || '';
+  }
+
+  shots.forEach(function (btn, i) {
+    btn.addEventListener('click', function () {
+      show(i);
+      dlg.showModal();
+    });
+  });
+
+  // Only the first two thumbnails are on screen (see .shots in the CSS); the second one says how many
+  // more there are, and the arrows in the viewer walk through the whole set.
+  var hidden = shots.length - 2;
+  if (hidden > 0) {
+    var badge = document.createElement('span');
+    badge.className = 'more';
+    badge.textContent = '+' + hidden + ' more';
+    var label = shots[1].querySelector('span');
+    if (label) label.hidden = true; // the count replaces the caption on this one
+    shots[1].appendChild(badge);
+    shots[1].setAttribute('aria-label', 'Open the screenshot viewer: ' + shots.length + ' screenshots');
+  }
+
+  dlg.querySelector('.lb-close').addEventListener('click', function () { dlg.close(); });
+  dlg.querySelector('.lb-prev').addEventListener('click', function () { show(at - 1); });
+  dlg.querySelector('.lb-next').addEventListener('click', function () { show(at + 1); });
+  dlg.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); show(at - 1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); show(at + 1); }
+  });
+  // click outside the picture closes it (the dialog box itself is the full-bleed image)
+  dlg.addEventListener('click', function (e) {
+    if (e.target === dlg) dlg.close();
+  });
+  // put focus back on the thumbnail that was opened, so keyboard users don't lose their place
+  dlg.addEventListener('close', function () { stopVideo(); shots[at].focus(); });
 })();

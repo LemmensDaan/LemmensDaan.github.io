@@ -290,3 +290,53 @@ body { position: relative; } /* absolute things (dock, background ship) are plac
 .pad.wrong { animation: padshake .3s; }
 @keyframes padshake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 @media (prefers-reduced-motion: reduce) { .pad.wrong { animation: none; } }
+
+/* Project screenshots: a thumbnail strip that opens full size in a dialog */
+/* Only the first two thumbnails are shown; the rest are reached with the arrows in the viewer,
+   so a project with a lot of screenshots does not stretch the card it sits in. */
+.shots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 4px; }
+.shots .shot:nth-of-type(n+3) { display: none; }
+.shot {
+  position: relative; display: block; padding: 0; overflow: hidden; cursor: pointer;
+  background: none; border: 1px solid var(--line); border-radius: 8px;
+  transition: border-color .2s, transform .2s;
+}
+.shot img { display: block; width: 100%; height: 92px; object-fit: cover; }
+.shot span {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 7px 6px 3px;
+  font-family: var(--mono); font-size: 10.5px; color: var(--text); text-align: center;
+  background: linear-gradient(transparent, rgba(7, 10, 26, .92));
+}
+.shot:hover, .shot:focus-visible { border-color: var(--teal); transform: translateY(-2px); }
+.shot .more {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 13px; color: var(--text); background: rgba(7, 10, 26, .66);
+}
+.shot:hover .more, .shot:focus-visible .more { background: rgba(7, 10, 26, .45); }
+@media (prefers-reduced-motion: reduce) { .shot:hover, .shot:focus-visible { transform: none; } }
+
+.lightbox {
+  width: min(94vw, 1100px); max-width: none; max-height: 92vh; padding: 0; overflow: visible;
+  color: var(--text); background: #0a0f28; border: 1px solid var(--line); border-radius: 14px;
+}
+.lightbox::backdrop { background: rgba(4, 6, 18, .86); }
+.lightbox img, .lightbox video { display: block; width: 100%; height: auto; max-height: calc(92vh - 52px);
+  object-fit: contain; border-radius: 14px 14px 0 0; background: #060a1c; }
+.lightbox [hidden] { display: none; }
+.lightbox p { margin: 0; padding: 11px 16px; font-size: 13.5px; color: var(--muted); }
+.lb-close, .lb-nav {
+  position: absolute; z-index: 1; display: flex; align-items: center; justify-content: center;
+  font: 400 20px/1 var(--sans); color: var(--text); cursor: pointer;
+  background: rgba(7, 10, 26, .82); border: 1px solid var(--line); border-radius: 50%;
+}
+.lb-close { top: -14px; right: -14px; width: 36px; height: 36px; font-size: 15px; }
+.lb-nav { top: 50%; width: 42px; height: 42px; margin-top: -21px; font-size: 26px; }
+.lb-prev { left: -16px; }
+.lb-next { right: -16px; }
+.lb-close:hover, .lb-nav:hover, .lb-close:focus-visible, .lb-nav:focus-visible { color: var(--teal); border-color: var(--teal); }
+@media (max-width: 600px) {
+  .lightbox { width: 96vw; }
+  .lb-prev { left: 4px; }
+  .lb-next { right: 4px; }
+  .lb-close { top: 4px; right: 4px; }
+}

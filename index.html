@@ -184,28 +184,32 @@
           <p class="stack">React 19 · TypeScript · Vite · Three.js · Zustand · Cloudflare Pages</p>
           <div class="shots" id="swn-shots">
             <button class="shot" type="button" data-src="img/swn/galaxy.webp" data-cap="Galaxy view: sectors placed across a procedurally generated galaxy">
-              <img src="img/swn/galaxy-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="A procedurally generated low-poly galaxy rendered in 3D, with satellite galaxies in the distance.">
+              <img src="img/swn/galaxy-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="A procedurally generated low-poly disc galaxy in rose and twilight blue.">
               <span>Galaxy</span>
+            </button>
+            <button class="shot" type="button" data-src="img/swn/orbit.mp4" data-poster="img/swn/orbit-thumb.webp" data-cap="Flying through a generated system: planets, moons and an asteroid belt, all placed procedurally">
+              <img src="img/swn/orbit-thumb.webp" width="700" height="394" loading="lazy" decoding="async" alt="A blue and green low-poly world with an asteroid belt trailing behind it.">
+              <span>Flythrough</span>
+            </button>
+            <button class="shot" type="button" data-src="img/swn/blackhole.webp" data-cap="A black hole system: accretion disc, and an asteroid stream being pulled in">
+              <img src="img/swn/blackhole-thumb.webp" width="700" height="319" loading="lazy" decoding="async" alt="A black hole with a glowing orange accretion disc and a stream of asteroids spiralling into it.">
+              <span>Black hole</span>
+            </button>
+            <button class="shot" type="button" data-src="img/swn/planets.webp" data-cap="A ringed gas giant with its moons, rendered in 3D">
+              <img src="img/swn/planets-thumb.webp" width="700" height="319" loading="lazy" decoding="async" alt="An orange low-poly gas giant with wide rings, orbited by several moons.">
+              <span>Planets</span>
             </button>
             <button class="shot" type="button" data-src="img/swn/sector.webp" data-cap="A generated sector: 31 star systems across an 8 × 10 hex grid">
               <img src="img/swn/sector-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="A hex grid sector map tilted in perspective, with coloured stars scattered across the hexes.">
               <span>Sector</span>
             </button>
-            <button class="shot" type="button" data-src="img/swn/system.webp" data-cap="System contents: stars, planets, moons, stations and jump gates">
-              <img src="img/swn/system-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="The system editor panel listing a primary star, planets and their moons beside the sector map.">
-              <span>System</span>
-            </button>
-            <button class="shot" type="button" data-src="img/swn/planet.webp" data-cap="3D system view, with procedurally generated planets and rings">
-              <img src="img/swn/planet-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="A low-poly orange gas giant with wide rings and two moons, rendered in 3D.">
-              <span>Planets</span>
+            <button class="shot" type="button" data-src="img/swn/ships.webp" data-cap="Ship builder: twelve hulls with full stat blocks, then drive, weapons, defences and fittings">
+              <img src="img/swn/ships-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="The ship builder's hull step, showing hull cards with speed, armour, HP, AC, power, mass and crew.">
+              <span>Ships</span>
             </button>
             <button class="shot" type="button" data-src="img/swn/gmtools.webp" data-cap="GM toolkit: ten random generators from the Stars Without Number tables">
               <img src="img/swn/gmtools-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="A grid of GM tool cards: initiative, NPC, adventure, society, patron, encounter, names, trade, artifacts and hacking.">
               <span>GM tools</span>
-            </button>
-            <button class="shot" type="button" data-src="img/swn/ships.webp" data-cap="Ship builder: twelve hulls with full stat blocks, then drive, weapons, defences and fittings">
-              <img src="img/swn/ships-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="The ship builder's hull step, showing hull cards with speed, armour, HP, AC, power, mass and crew.">
-              <span>Ships</span>
             </button>
             <button class="shot" type="button" data-src="img/swn/character.webp" data-cap="The ten-step character creator">
               <img src="img/swn/character-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="The character creator on its Identity step, with name, homeworld and goal fields.">
@@ -363,6 +367,7 @@
     <button class="lb-close" type="button" aria-label="Close">&#10005;</button>
     <button class="lb-nav lb-prev" type="button" aria-label="Previous">&#8249;</button>
     <img id="lb-img" alt="">
+    <video id="lb-vid" hidden loop muted playsinline controls></video>
     <p id="lb-cap"></p>
     <button class="lb-nav lb-next" type="button" aria-label="Next">&#8250;</button>
   </dialog>
