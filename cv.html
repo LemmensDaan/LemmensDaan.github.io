@@ -3,95 +3,217 @@
 <head>
 <meta charset="utf-8">
 <title>Daan Lemmens · CV</title>
+<meta name="description" content="CV of Daan Lemmens, full stack developer in Belgium.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4; margin: 10mm 13mm; }
+  /* Printed on A4 with no page margin of its own: the sidebar has to reach the paper's edge,
+     so every margin lives as padding inside the two columns instead. */
+  @page { size: A4; margin: 0; }
+
+  :root {
+    --navy: #0b1030;        /* the site's background, here as the sidebar */
+    --teal: #3fe0c5;        /* site teal: bright enough for the navy column only */
+    --teal-ink: #12806f;    /* the same hue darkened until it reads as text on white */
+    --gold: #ffc857;
+    --ink: #1b1f33;
+    --ink-soft: #565d78;
+    --rule: #d8dcec;
+    --side: 63mm;
+  }
+
   * { box-sizing: border-box; }
-  body { margin: 0; font: 9.3pt/1.35 "Segoe UI", Arial, sans-serif; color: #1b1f33; }
-  header { border-bottom: 3px solid #1fb8a0; padding-bottom: 8px; margin-bottom: 10px; }
-  h1 { margin: 0; font-size: 24pt; letter-spacing: -.01em; }
-  .role { color: #1fb8a0; font-weight: 700; font-size: 12pt; margin: 0; }
-  .contact { margin: 4px 0 0; color: #555; font-size: 9.5pt; }
-  h2 { font-size: 10.5pt; text-transform: uppercase; letter-spacing: .08em; color: #1fb8a0; border-bottom: 1px solid #d5d9ea; padding-bottom: 2px; margin: 10px 0 4px; }
-  .job { margin-bottom: 8px; break-inside: avoid; }
-  .job h3 { margin: 0; font-size: 10.5pt; display: flex; justify-content: space-between; gap: 12px; }
-  .job h3 span { font-weight: 400; color: #666; font-size: 9.5pt; white-space: nowrap; }
-  .co { color: #555; margin: 0; }
-  ul { margin: 3px 0 0; padding-left: 16px; }
-  li { margin: 1px 0; }
+  html, body { margin: 0; }
+  body {
+    font-family: "Space Grotesk", "Segoe UI", Arial, sans-serif;
+    font-size: 8.6pt; line-height: 1.36; color: var(--ink);
+    background: #fff;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+
+  /* The sidebar's colour is painted by a fixed layer rather than as a background on the column,
+     so it still reaches the foot of the sheet if the CV ever runs onto a second page. */
+  body::before {
+    content: ""; position: fixed; top: 0; bottom: 0; left: 0; width: var(--side);
+    background: var(--navy); border-right: 1.2pt solid var(--teal); z-index: 0;
+  }
+
+  .sheet { display: grid; grid-template-columns: var(--side) 1fr; min-height: 296mm; }
+  aside, main { position: relative; z-index: 1; }
+  aside { padding: 11mm 7mm 6mm; color: #d9deff; }
+  main  { padding: 11mm 11mm 6mm 8.5mm; }
+
+  /* --- name block -------------------------------------------------------- */
+  .name { font-size: 19pt; line-height: 1.05; letter-spacing: -.02em; color: #fff; margin: 0; }
+  .role { font-family: "Space Mono", monospace; font-size: 8.4pt; letter-spacing: .04em;
+          color: var(--teal); margin: 5px 0 0; }
+  .rule { height: 2pt; background: var(--gold); width: 26mm; margin: 7px 0 0; }
+
+  /* --- section headings -------------------------------------------------- */
+  aside h2, main h2 {
+    font-family: "Space Mono", monospace; font-size: 7.8pt; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .14em; margin: 0 0 5px;
+  }
+  aside h2 { color: var(--teal); margin-top: 5.6mm; padding-bottom: 3px;
+             border-bottom: .6pt solid rgba(255, 255, 255, .22); }
+  main h2  { color: var(--teal-ink); margin-top: 4.6mm; padding-bottom: 3px;
+             border-bottom: .8pt solid var(--rule); }
+  main h2:first-child { margin-top: 0; }
+
   p { margin: 3px 0; }
-  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .skills b { display: inline-block; min-width: 82px; }
+  a { color: inherit; text-decoration: none; }
+
+  /* --- sidebar ----------------------------------------------------------- */
+  aside p { color: #c3caf0; }
+  .contact { font-size: 8.4pt; line-height: 1.6; word-break: break-word; }
+  .contact b { display: block; font-weight: 400; color: #fff; }
+  .skill { margin: 0 0 4px; font-size: 8.4pt; }
+  .skill b { display: block; font-family: "Space Mono", monospace; font-size: 7.3pt;
+             font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+             color: var(--gold); margin-bottom: 1px; }
+  .school { margin: 0 0 6px; font-size: 8.4pt; }
+  .school b { color: #fff; }
+  .school span { display: block; font-family: "Space Mono", monospace; font-size: 7.3pt; color: var(--teal); }
+  .chips { margin: 2px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 3px; }
+  .chips li { font-size: 7.6pt; line-height: 1.5; padding: 1px 6px; border-radius: 99px;
+              border: .6pt solid rgba(63, 224, 197, .4); color: #d9deff; }
+
+  /* --- experience -------------------------------------------------------- */
+  .job { margin: 0 0 3.4mm; break-inside: avoid; }
+  .job:last-child { margin-bottom: 0; }
+  .job h3 { margin: 0; font-size: 10pt; line-height: 1.25; display: flex;
+            justify-content: space-between; align-items: baseline; gap: 10px; }
+  .job h3 time { font-family: "Space Mono", monospace; font-size: 7.8pt; font-weight: 400;
+                 color: var(--ink-soft); white-space: nowrap; }
+  .at { font-family: "Space Mono", monospace; font-size: 8.2pt; color: var(--teal-ink);
+        margin: 1px 0 3px; }
+  .at span { color: var(--ink-soft); }
+
+  /* square teal markers, the same shape as the meter pips on the site */
+  ul.b { list-style: none; margin: 2px 0 0; padding: 0; }
+  ul.b li { position: relative; padding-left: 10px; margin: 1px 0; }
+  ul.b li::before { content: ""; position: absolute; left: 0; top: .5em;
+                    width: 3.4px; height: 3.4px; background: var(--teal-ink); }
+
+  /* --- projects ---------------------------------------------------------- */
+  .proj { margin: 0 0 2.8mm; break-inside: avoid; }
+  .proj:last-child { margin-bottom: 0; }
+  .proj h3 { margin: 0; font-size: 9.2pt; }
+  .proj h3 em { font-style: normal; font-family: "Space Mono", monospace; font-size: 7.6pt;
+                color: var(--ink-soft); }
+  .stack { font-family: "Space Mono", monospace; font-size: 7.6pt; color: var(--teal-ink); margin: 2px 0 0; }
+
+  /* On screen the sheet sits on the page background like a sheet of paper. */
+  @media screen {
+    body { background: #e9ebf4; }
+    .sheet { width: 210mm; margin: 0 auto; background: #fff; box-shadow: 0 2px 24px rgba(11, 16, 48, .25); }
+    body::before { left: 50%; margin-left: -105mm; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>Daan Lemmens</h1>
-  <p class="role">Full Stack Developer</p>
-  <p class="contact">daan.lemmens@hotmail.com · Belgium · linkedin.com/in/daan-lemmens · github.com/LemmensDaan · lemmensdaan.github.io</p>
-</header>
+<div class="sheet">
 
-<h2>Profile</h2>
-<p>Full stack developer with six years of experience, currently building a multi-tenant payroll and HR data platform on .NET, React and Azure. Comfortable across backend and frontend, with some cloud infrastructure experience. I design and build with AI assistance, then review and test everything that lands. In my spare time I build web, game and hardware projects, from tabletop tools to a self-hosted e-ink dashboard.</p>
+  <aside>
+    <p class="name">Daan<br>Lemmens</p>
+    <p class="role">Full Stack Developer</p>
+    <div class="rule"></div>
 
-<h2>Experience</h2>
-<div class="job">
-  <h3>Full Stack Developer <span>Sep 2022 – present</span></h3>
-  <p class="co">Paybix · St-Katelijne-Waver (via ElmosExpert until Sep 2023, then permanent)</p>
-  <ul>
-    <li>Develop Epix, a multi-tenant payroll and HR data platform with integrations to payroll providers across Europe and the UK</li>
-    <li>Main contributor to Epix's own API: C# / .NET, ASP.NET Core, EF Core on SQL Server, REST and GraphQL</li>
-    <li>Most of the integration work runs through me, in both directions: implementing against external payroll and HR providers’ APIs, and supporting the external parties that consume ours, including calls with customers to clarify behaviour and work through bugs</li>
-    <li>Frontend in React and TypeScript in an Nx monorepo, with generated GraphQL clients</li>
-    <li>Some hands-on experience with Azure infrastructure as code (Bicep) and Azure DevOps pipelines</li>
-  </ul>
-</div>
-<div class="job">
-  <h3>IT Consultant <span>Sep 2022 – Sep 2023</span></h3>
-  <p class="co">ElmosExpert · Mechelen</p>
-  <ul><li>Placed at Paybix under a hire-to-hire arrangement; converted to a permanent contract after one year</li></ul>
-</div>
-<div class="job">
-  <h3>Software Developer <span>Oct 2020 – Aug 2022</span></h3>
-  <p class="co">Contribute NV · Kontich</p>
-  <ul>
-    <li>Oracle APEX development for NBN (standards and customer management) and Sabam (project-management automation)</li>
-    <li>Modernised the registration and online payment flow for walking federations (Cronolive)</li>
-    <li>Manual and automated testing of a Petronas application</li>
-  </ul>
-</div>
-<div class="job">
-  <h3>Intern, then Front End Developer <span>Oct 2019 – Apr 2020</span></h3>
-  <p class="co">Cumul.io · Leuven</p>
-  <ul>
-    <li>Built an Angular library that embeds dashboards in a few lines of code, now used by customers; wrote its tutorial and functional analysis</li>
-    <li>Migrated large parts of the Cumul.io Academy from AngularJS to Angular</li>
-  </ul>
-</div>
+    <h2>Contact</h2>
+    <p class="contact">
+      <b>daan.lemmens@hotmail.com</b>
+      <b>Belgium</b>
+      <b>lemmensdaan.github.io</b>
+      <b>linkedin.com/in/daan-lemmens</b>
+      <b>github.com/LemmensDaan</b>
+    </p>
 
-<h2>Projects</h2>
-<ul>
-  <li><b>SWN Builder</b> (swn-builder.pages.dev): web companion for the tabletop RPG Stars Without Number, with 3D procedural planets, PDF export and offline mode. React 19, TypeScript, Three.js, Cloudflare Pages.</li>
-  <li><b>Star Rogue</b>: FTL-style space roguelike with procedural star systems and custom shaders. Godot 4, GDScript. Work in progress.</li>
-  <li><b>Home dashboard (InkyPi)</b>: customised open-source e-ink dashboard on a Raspberry Pi, with a macro-pad controller daemon and a themed calendar plugin. Python.</li>
-</ul>
-
-<div class="cols">
-  <div>
     <h2>Skills</h2>
-    <p class="skills"><b>Backend</b> C#, .NET, API design and integrations, ASP.NET Core, EF Core, SQL Server, GraphQL, Oracle APEX, PL/SQL, Java</p>
-    <p class="skills"><b>Frontend</b> React, TypeScript, Angular, HTML, CSS, Three.js</p>
-    <p class="skills"><b>Cloud</b> Azure, Bicep, Azure DevOps, Git</p>
-    <p class="skills"><b>Other</b> Cypress, Jest, xUnit, Godot, Python, Raspberry Pi</p>
-  </div>
-  <div>
+    <p class="skill"><b>Backend</b>C# · .NET · ASP.NET Core · EF Core · SQL Server · REST &amp; GraphQL · API design and integrations · Oracle APEX · PL/SQL · Java</p>
+    <p class="skill"><b>Frontend</b>React · TypeScript · Angular · HTML · CSS · Three.js · Nx monorepo</p>
+    <p class="skill"><b>Cloud &amp; ops</b>Azure · Bicep (IaC) · Azure DevOps · CI/CD · Git</p>
+    <p class="skill"><b>Testing</b>xUnit · Jest · Cypress</p>
+    <p class="skill"><b>Off the clock</b>Godot · GDScript · GLSL · Python · Raspberry Pi</p>
+
     <h2>Education</h2>
-    <p><b>UC Leuven-Limburg</b>, 2016 – 2020<br>Professional bachelor in Applied Computer Science, software development</p>
-    <p><b>Campus Groep T, Leuven</b>, 2014 – 2016<br>Industrial Sciences (first years)</p>
+    <p class="school"><b>UC Leuven-Limburg</b><span>2016 – 2020</span>Professional bachelor in Applied Computer Science, software development track</p>
+    <p class="school"><b>Campus Groep T, Leuven</b><span>2014 – 2016</span>Industrial Sciences, before switching to Applied Computer Science</p>
+
     <h2>Languages</h2>
-    <p>Dutch (native) · English (C2)<br>French (basic)</p>
-    <h2>Interests</h2>
-    <p>Gaming, D&amp;D and tabletop RPGs, music, hobby projects, running</p>
-  </div>
+    <p class="school">Dutch (native) · English (C2) · French (basic)</p>
+
+    <h2>Volunteering</h2>
+    <p class="school">Youth leader at Fanfare Sint-Dionysius Opoeteren, 2016 – 2023: an annual youth camp and activities through the year.</p>
+    <p class="school">Company first aider, Red Cross Flanders (2019, expired).</p>
+
+    <h2>Off-duty</h2>
+    <ul class="chips">
+      <li>Gaming</li><li>D&amp;D · TTRPGs</li><li>Space</li><li>Music</li><li>Hobby projects</li><li>Running</li>
+    </ul>
+  </aside>
+
+  <main>
+    <h2>Profile</h2>
+    <p>Full stack developer with six years of experience, currently building Epix, a multi-tenant payroll and HR data platform, on .NET, React and Azure. Integrations are where most of my time goes: implementing against payroll and HR providers across Europe and the UK, and supporting the external parties that consume our own API, customer calls included. Comfortable on both sides of the stack, with hands-on Azure infrastructure and pipeline work. I design and build with AI assistance, then review and test everything that lands. Evenings go to game, web and hardware projects.</p>
+
+    <h2>Experience</h2>
+    <div class="job">
+      <h3>Full Stack Developer <time>Sep 2022 – present</time></h3>
+      <p class="at">Paybix <span>· St-Katelijne-Waver</span></p>
+      <ul class="b">
+        <li>Build Epix, a multi-tenant payroll and HR data platform with integrations to payroll providers across Europe and the UK</li>
+        <li>Main contributor to the Epix API: C# and .NET, ASP.NET Core, EF Core on SQL Server, REST and GraphQL</li>
+        <li>Most of the integration work runs through me, in both directions: implementing against external providers' APIs, and supporting the parties that consume ours, customer calls to clarify behaviour and chase bugs included</li>
+        <li>Frontend in React and TypeScript in an Nx monorepo, with generated GraphQL clients</li>
+        <li>Azure infrastructure as code in Bicep, with build and release pipelines in Azure DevOps</li>
+        <li>Multi-tenant throughout: a feature has to hold up across customers on different providers and in different countries</li>
+      </ul>
+    </div>
+    <div class="job">
+      <h3>IT Consultant <time>Sep 2022 – Sep 2023</time></h3>
+      <p class="at">ElmosExpert <span>· Mechelen</span></p>
+      <ul class="b">
+        <li>Placed at Paybix under a hire-to-hire arrangement; converted to a permanent contract after a year on the team</li>
+      </ul>
+    </div>
+    <div class="job">
+      <h3>Software Developer <time>Oct 2020 – Aug 2022</time></h3>
+      <p class="at">Contribute NV <span>· Kontich</span></p>
+      <ul class="b">
+        <li>Oracle APEX development for NBN: standards and customer management applications</li>
+        <li>Project-management automation for Sabam</li>
+        <li>Modernised the registration and online payment flow for walking federations (Cronolive)</li>
+        <li>Manual and automated testing of a Petronas application</li>
+      </ul>
+    </div>
+    <div class="job">
+      <h3>Intern, then Front End Developer <time>Oct 2019 – Apr 2020</time></h3>
+      <p class="at">Cumul.io <span>· Leuven</span></p>
+      <ul class="b">
+        <li>Built an Angular library that embeds Cumul.io dashboards in a few lines of code, now used by customers, and wrote the tutorial and functional analysis shipped with it</li>
+        <li>Migrated large parts of the Cumul.io Academy from AngularJS to Angular</li>
+      </ul>
+    </div>
+
+    <h2>Projects</h2>
+    <div class="proj">
+      <h3>SWN Builder <em>· swn-builder.pages.dev</em></h3>
+      <p>Web companion for the tabletop RPG Stars Without Number: characters, ships and mechs, factions, sector and galaxy generation, a GM toolkit and PDF sheet export, with 3D procedural planets, offline PWA mode and Drive backup.</p>
+      <p class="stack">React 19 · TypeScript · Vite · Three.js · Zustand · Cloudflare Pages</p>
+    </div>
+    <div class="proj">
+      <h3>Star Rogue</h3>
+      <p>FTL-style sector-crawl roguelike with faction wars and a spreading corruption. Seeded procedural star systems, with custom shaders for planets, nebulae and black holes. In progress.</p>
+      <p class="stack">Godot 4 · GDScript · GLSL shaders</p>
+    </div>
+    <div class="proj">
+      <h3>Home dashboard &amp; media server</h3>
+      <p>InkyPi, an open-source e-ink dashboard, on a Raspberry Pi beside my media server. My additions: a macro-pad and knob controller daemon that switches views, a themed calendar plugin and patches to existing ones.</p>
+      <p class="stack">Python · InkyPi · Raspberry Pi · Jinja2</p>
+    </div>
+  </main>
+
 </div>
 </body>
 </html>

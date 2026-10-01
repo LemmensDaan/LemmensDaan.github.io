@@ -132,6 +132,7 @@
       return li.getAttribute('data-id') !== 'completionist' && !unlocked[li.getAttribute('data-id')];
     });
     if (!rest.length) unlock('completionist');
+    if (id === 'completionist') openCv(true);
     var b = document.getElementById('achv-btn');
     if (b) { b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); }
   }
@@ -434,6 +435,27 @@
       unlock('cv');
     });
   });
+
+  // ...unless every achievement is in hand. A completionist gets the drydock opened: the button
+  // becomes the actual download, draft and all. Declared here, hoisted so unlock() can call it.
+  function openCv(announce) {
+    if (!unlocked.completionist) return;
+    var swapped = 0;
+    document.querySelectorAll('.cv-wip').forEach(function (b) {
+      var a = document.createElement('a');
+      a.className = b.className.replace('cv-wip', 'cv-open');
+      a.href = 'Daan-Lemmens-CV.pdf';
+      a.setAttribute('download', 'Daan-Lemmens-CV.pdf');
+      a.rel = 'noopener';
+      a.title = 'Unlocked by completing every achievement. Still a draft.';
+      a.innerHTML = 'Download CV <span aria-hidden="true">★</span>';
+      a.addEventListener('click', function () { unlock('cv'); });
+      b.parentNode.replaceChild(a, b);
+      swapped++;
+    });
+    if (announce && swapped) notify('Drydock open: the CV download is yours.', '★');
+  }
+  openCv(false);
 
   if ('IntersectionObserver' in window) {
     var sections = document.querySelectorAll('main section[id]');
@@ -1008,27 +1030,35 @@
 
   // Each line owns its own loading state. The returned function takes the first reading and
   // decodes into it; later refreshes just swap the value, so it does not re-animate every 30s.
-  function channel(el, chars) {
+  // set.fail() says so in the line's own place instead of leaving a gap: these feeds are public
+  // and key-less, and the station one in particular drops a call often enough to be worth naming.
+  function channel(el, chars, label) {
     var stop = waiting(el, chars);
-    var settled = false;
-    var giveUp = setTimeout(function () {
-      if (settled) return;
-      stop();
-      el.textContent = '';
-      if (!spaceEl.textContent && !issEl.textContent) box.hidden = true;
-    }, 12000);
-    return function (text) {
+    var settled = false, down = false;
+    var giveUp = setTimeout(function () { set.fail(); }, 12000);
+
+    function write(text, failed) {
+      el.classList.toggle('down', !!failed);
       if (settled) { el.textContent = text; return; }
       settled = true;
       clearTimeout(giveUp);
       stop();
       if (reduce) { el.textContent = text; return; }
       decode(el, text, 900);
+    }
+
+    function set(text) { down = false; write(text, false); }
+    set.fail = function () {
+      if (down) return; // already saying it
+      down = true;
+      write(label + ' · could not connect', true);
     };
+    set.idle = function () { return !settled; }; // nothing has ever landed in this line
+    return set;
   }
 
-  var setSpace = channel(spaceEl, 26);
-  var setIss = channel(issEl, 34);
+  var setSpace = channel(spaceEl, 26, 'Solar wind');
+  var setIss = channel(issEl, 34, 'ISS');
   box.hidden = false;
 
   function getJSON(url) {
@@ -1055,8 +1085,18 @@
       // the meter waits for the line to finish decoding, then lights up underneath it
       if (kpShown) showKp(kp);
       else { kpShown = true; setTimeout(function () { showKp(kp); }, reduce ? 0 : 950); }
-    }).catch(function () {});
+      spaceMisses = 0;
+    }).catch(function () {
+      // one dropped refresh is not worth replacing a reading that is minutes old; two in a row is,
+      // and a line that has never had a reading says so straight away rather than spinning on
+      if (++spaceMisses >= 2 || setSpace.idle()) {
+        setSpace.fail();
+        if (kpEl) { kpEl.hidden = true; kpShown = false; }
+      }
+    });
   }
+
+  var spaceMisses = 0, issMisses = 0;
 
   var BRUSSELS = { lat: 50.85, lon: 4.35 };
   function kmApart(a, b) { // haversine; plenty accurate for a caption
@@ -1079,7 +1119,15 @@
         (away <= horizon ? ' · above the horizon' : ''));
       if (rangeShown) showRange(away, horizon);
       else { rangeShown = true; setTimeout(function () { showRange(away, horizon); }, reduce ? 0 : 950); }
-    }).catch(function () {});
+      issMisses = 0;
+    }).catch(function () {
+      // the station moves 230 km between calls, so a stale line is still roughly true for a
+      // minute; past that the feed is down and the line should say so rather than lie quietly
+      if (++issMisses >= 3 || setIss.idle()) {
+        setIss.fail();
+        if (rangeEl) { rangeEl.hidden = true; rangeShown = false; }
+      }
+    });
   }
 
   space();

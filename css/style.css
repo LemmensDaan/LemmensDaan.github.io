@@ -384,6 +384,9 @@ body { position: relative; } /* absolute things (dock, background ship) are plac
 /* The CV button is a real button, not a link: match the anchors it sits next to, and look unfinished */
 .btn.cv-wip { line-height: 1.6; cursor: pointer; border-style: dashed; }
 .btn.cv-wip:hover, .btn.cv-wip:focus-visible { border-color: var(--gold); color: var(--gold); }
+/* Once every achievement is in, the dashed placeholder is replaced by a link that really downloads */
+.btn.cv-open { border-color: var(--gold); color: var(--gold); }
+.btn.cv-open:hover, .btn.cv-open:focus-visible { background: rgba(255, 200, 87, .14); }
 
 /* Live telemetry under the astronaut: stays out of the way until a reading arrives */
 .telemetry { font-family: var(--mono); font-size: 11.5px; color: var(--muted); margin: 8px 0 0; line-height: 1.55; }
@@ -392,6 +395,8 @@ body { position: relative; } /* absolute things (dock, background ship) are plac
    their own display and line-height or the lines collapse and overlap */
 .telemetry > span { display: block; min-height: 1.55em; }
 .telemetry > span:empty { display: none; }
+/* a feed that will not answer: still a readout, just a dead one */
+.telemetry > span.down { color: var(--coral); opacity: .72; }
 
 /* The D&D chip rolls a d20 */
 .chips .d20-chip { padding: 0; }

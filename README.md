@@ -3,7 +3,10 @@
 Personal CV site: plain HTML, CSS and JS, no build step.
 
 - Run locally: `npx serve` (or `python -m http.server 8000`) in this folder.
-- CV: edit `cv.html`, then re-render `Daan-Lemmens-CV.pdf` (Edge/Chrome "print to PDF", A4, no headers).
+- CV: edit `cv.html`, then re-render `Daan-Lemmens-CV.pdf` (Edge/Chrome "print to PDF", A4, no headers,
+  background graphics on - the navy sidebar is a printed background).
+- The "Download CV" buttons stay a joke until every achievement is unlocked; the Completionist tile
+  swaps them for a real link to `Daan-Lemmens-CV.pdf`, so the draft can still be reviewed.
 - Contact and feedback forms post to [FormSubmit](https://formsubmit.co) and arrive by email.
 - Favicons and the `og:image` share card are generated: `python tools/make-icons.py` (needs Pillow).
 - SWN Builder media lives in `img/swn/`: `-thumb` files are the grid thumbnails, and `orbit.mp4`
@@ -19,4 +22,6 @@ Personal CV site: plain HTML, CSS and JS, no build step.
   achievement straight into the shared `dl-achievements` localStorage key.
 - The telemetry line under the astronaut reads two public, key-less feeds: NOAA SWPC
   (`/products/summary/solar-wind-speed.json` and `/products/noaa-planetary-k-index.json`) and
-  `api.wheretheiss.at`. If a feed is down its line is left out; no key or proxy is involved.
+  `api.wheretheiss.at`; no key or proxy is involved. A feed that never answers says "could not
+  connect" in its own line rather than disappearing; the station one in particular drops calls.
+  A single missed refresh keeps the last reading (3 in a row for the ISS, 2 for solar wind).
