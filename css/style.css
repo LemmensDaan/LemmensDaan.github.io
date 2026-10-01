@@ -295,7 +295,8 @@ body { position: relative; } /* absolute things (dock, background ship) are plac
 /* Only the first two thumbnails are shown; the rest are reached with the arrows in the viewer,
    so a project with a lot of screenshots does not stretch the card it sits in. */
 .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 4px; }
-.shots .shot:nth-of-type(n+3) { display: none; }
+.shots .shot.extra { display: none; }
+.shots .shot[hidden] { display: none; }  /* beats the .shot display:block above */
 .shot {
   position: relative; display: block; padding: 0; overflow: hidden; cursor: pointer;
   background: none; border: 1px solid var(--line); border-radius: 8px;
@@ -340,3 +341,46 @@ body { position: relative; } /* absolute things (dock, background ship) are plac
   .lb-next { right: 4px; }
   .lb-close { top: 4px; right: 4px; }
 }
+
+
+/* Skill tree without pips: the list reads as a list, not a scorecard */
+.branch li { justify-content: flex-start; }
+.branch li::after { content: none; }
+
+/* Feedback: a quiet disclosure under the contact form, not a second headline act */
+.forms { max-width: 560px; }
+.feedback { margin-top: 26px; max-width: 560px; }
+.feedback > summary { font-family: var(--mono); font-size: 13.5px; color: var(--muted); cursor: pointer; padding: 6px 0; }
+.feedback > summary:hover, .feedback > summary:focus-visible { color: var(--teal); }
+.feedback[open] > summary { margin-bottom: 10px; color: var(--teal); }
+
+/* HUD: plain-mode switch */
+.hud-mode { font: inherit; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 8px; padding: 3px 10px; cursor: pointer; white-space: nowrap; }
+.hud-mode:hover, .hud-mode:focus-visible { color: var(--teal); border-color: var(--teal); }
+.hud-mode[aria-pressed="true"] { color: var(--teal); border-color: var(--teal); }
+@media (max-width: 760px) { .hud { gap: 10px; padding: 10px 14px; } .hud-mode { padding: 3px 8px; } }
+
+/* --- Plain mode ------------------------------------------------------------
+   Same content, none of the show: no starfield, no astronaut, no achievements,
+   no animation. For the reader who came to find out what I have done. */
+.plain #stars, .plain .ship, .plain .cruise, .plain .hero-avatar, .plain .hero-text .kicker,
+.plain .hud-achv, .plain .achv-panel, .plain #toast, .plain .feedback { display: none !important; }
+.plain body { background-image: none; background-color: #0a0e20; }
+.plain * { animation: none !important; transition: none !important; }
+.plain { scroll-behavior: auto; }
+.plain :is(.hud-brand, .hud-nav a, .hero-text h1, .hero-text .role, .hero-text .lead, .hero-text .btn, .hero .tag) { visibility: visible !important; }
+.plain .hero { display: block; min-height: 0; padding: 96px 0 4px; }
+.plain .hero-text h1 { font-size: clamp(2.1rem, 6vw, 3.1rem); }
+.plain .lead { max-width: 68ch; }
+.plain section:not(.hero) { padding: 36px 0 0; }
+.plain h2 { font-size: 1.5rem; }
+.plain .sub { margin-bottom: 20px; }
+.plain .card, .plain .quest, .plain .branch { background: rgba(255, 255, 255, .03); }
+.plain .quest:hover, .plain .btn:hover, .plain .shot:hover { transform: none; }
+.plain .planet { box-shadow: inset -7px -7px 0 rgba(0, 0, 0, .3); }
+.plain .btn, .plain .stop.now .card { filter: none; }
+.plain .stop { margin-bottom: 14px; }
+
+/* The CV button is a real button, not a link: match the anchors it sits next to, and look unfinished */
+.btn.cv-wip { line-height: 1.6; cursor: pointer; border-style: dashed; }
+.btn.cv-wip:hover, .btn.cv-wip:focus-visible { border-color: var(--gold); color: var(--gold); }

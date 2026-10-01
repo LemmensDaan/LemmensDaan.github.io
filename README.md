@@ -8,3 +8,9 @@ Personal CV site: plain HTML, CSS and JS, no build step.
 - Favicons and the `og:image` share card are generated: `python tools/make-icons.py` (needs Pillow).
 - SWN Builder media lives in `img/swn/`: `-thumb` files are the grid thumbnails, and `orbit.mp4`
   is the flythrough clip (the viewer plays any `.mp4`/`.webm` listed as a tile's `data-src`).
+- Plain mode: the "Plain CV" button in the header drops the starfield, astronaut, achievements and
+  animation, leaving the content. It sets `html.plain` and remembers the choice in `localStorage`
+  (`dl-plain`), read back by the inline script in `<head>` so there is no flash on a return visit.
+- SWN Builder's first tile plays `img/swn/demo.gif` (the 30s walkthrough). Drop the gif in under that
+  name and it works; until then the tile removes itself the first time it is opened. The strip shows a
+  normal webp thumbnail for it, so the gif only downloads when someone clicks.

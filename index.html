@@ -28,7 +28,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <script>document.documentElement.classList.add('js');setTimeout(function(){document.documentElement.classList.add('ready')},4000)</script>
+  <script>document.documentElement.classList.add('js');try{if(localStorage.getItem('dl-plain')==='1')document.documentElement.classList.add('plain')}catch(e){}setTimeout(function(){document.documentElement.classList.add('ready')},4000)</script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -44,6 +44,7 @@
       <a href="#contact">Contact</a>
     </nav>
     <button class="hud-achv" id="achv-btn" type="button" aria-expanded="false" aria-controls="achv-panel" title="Achievements">&#9733; <span id="achv-n">0</span>/<span id="achv-total">6</span></button>
+    <button class="hud-mode" id="mode-btn" type="button" aria-pressed="false" title="Plain mode: drop the animations and the game, keep the CV">Plain CV</button>
     <button class="hud-burger" id="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="hud-nav"><span></span><span></span><span></span></button>
   </header>
 
@@ -51,7 +52,7 @@
     <h2>Achievements</h2>
     <ul class="achv-grid">
         <li data-id="explorer"><b>Cartographer</b><span>Visited every section of the page</span></li>
-        <li data-id="cv"><b>Recruiter's choice</b><span>Downloaded my CV</span></li>
+        <li data-id="cv"><b>Recruiter's choice</b><span>Went looking for the CV</span></li>
         <li data-id="message"><b>Phone Home</b><span>Sent a message, who knows, maybe he'll respond</span></li>
         <li data-id="review"><b>Critic</b><span>Left a review, hopefully it was a good one</span></li>
         <li data-id="hello"><b>Houston, we have contact</b><span>Poked the astronaut</span></li>
@@ -90,7 +91,7 @@
         <p class="lead">Since 2020 I've been building web software, from Oracle APEX apps to a multi-tenant payroll platform on .NET, React and Azure. After hours I build space games and tabletop tools, and tinker with my home media server and e-ink display.</p>
         <div class="cta">
           <a class="btn primary" href="#log">See my experience</a>
-          <a class="btn" href="Daan-Lemmens-CV.pdf">Download CV</a>
+          <button class="btn cv-wip" type="button" title="Still under construction">Download CV <span aria-hidden="true">🚧</span></button>
           <a class="btn" href="https://github.com/LemmensDaan" rel="noopener">GitHub</a>
           <a class="btn" href="https://be.linkedin.com/in/daan-lemmens" rel="noopener">LinkedIn</a>
         </div>
@@ -129,8 +130,9 @@
             <h3>Full Stack Developer <em>Paybix</em></h3>
             <p>Working on Epix, a multi-tenant payroll and HR data platform that connects to payroll providers across Europe and the UK.</p>
             <ul>
+              <li>Most of the integration work runs through me, in both directions: external parties consuming our API, and our platform consuming theirs</li>
+              <li>When we consume theirs, that is implementing against their API and their ticket queue; when they consume ours, there are calls with the customer to clarify behaviour or chase down a bug</li>
               <li>Mostly C# and .NET day to day: ASP.NET Core and EF Core on SQL Server, with REST and GraphQL on top, and React with TypeScript on the front end</li>
-              <li>Built and maintained the API integrations with external payroll and HR systems</li>
               <li>Azure infrastructure as code in Bicep, with build and release pipelines in Azure DevOps</li>
               <li>Multi-tenant throughout, so a feature has to hold up across customers on different payroll providers and in different countries</li>
             </ul>
@@ -178,11 +180,15 @@
       <p class="sub">Personal projects, built in the evenings. AI tools are part of how I work on them.</p>
       <div class="grid">
         <article class="quest">
-          <span class="badge done">Shipped · 280+ commits</span>
+          <span class="badge done">Shipped</span>
           <h3>SWN Builder</h3>
           <p>A web companion for the tabletop RPG <em>Stars Without Number</em>: characters, ships and mechs, factions, sector and galaxy generation, a GM toolkit and PDF sheet export. Includes 3D procedural planets, offline PWA mode and Google Drive backup.</p>
           <p class="stack">React 19 · TypeScript · Vite · Three.js · Zustand · Cloudflare Pages</p>
           <div class="shots" id="swn-shots">
+            <button class="shot" type="button" hidden data-src="img/swn/demo.gif" data-cap="Thirty seconds through the app: character creation, sector generation and the GM toolkit">
+              <img src="img/swn/character-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="A run through the SWN Builder interface.">
+              <span>30s demo</span>
+            </button>
             <button class="shot" type="button" data-src="img/swn/galaxy.webp" data-cap="Galaxy view: sectors placed across a procedurally generated galaxy">
               <img src="img/swn/galaxy-thumb.webp" width="700" height="438" loading="lazy" decoding="async" alt="A procedurally generated low-poly disc galaxy in rose and twilight blue.">
               <span>Galaxy</span>
@@ -216,14 +222,14 @@
               <span>Characters</span>
             </button>
           </div>
-          <p class="links"><a href="https://swn-builder.pages.dev/" rel="noopener">Live app</a> <span class="private">Access required · <a href="#contact">contact me for access</a></span></p>
+          <p class="links"><a href="https://swn-builder.pages.dev/" rel="noopener">Live app</a> <span class="private">Login required: the app ships licensed <em>Stars Without Number</em> material, so the source and the app stay closed.<br><a href="#contact">Ask me for a walkthrough</a>.</span></p>
         </article>
         <article class="quest">
           <span class="badge wip">In progress</span>
           <h3>Star Rogue</h3>
           <p>An FTL-style sector-crawl roguelike with faction wars and a spreading corruption. So far: seeded procedural star systems with custom shaders for planets, nebulae and black holes.</p>
           <p class="stack">Godot 4 · GDScript · GLSL shaders</p>
-          <p class="links"><span class="private">Still in progress · <a href="#contact">ask me for more info</a></span></p>
+          <p class="links"><span class="private">Closed source while it is in development, since it may end up a commercial release.</span></p>
         </article>
         <article class="quest">
           <span class="badge hw">Tinkering</span>
@@ -237,49 +243,49 @@
     <!-- SKILL TREE -->
     <section id="skills">
       <h2><span>03</span> Skill tree</h2>
-      <p class="sub">Pips show how much I use each skill day to day, not how long I've known it.</p>
+      <p class="sub">What I reach for. Grouped by where it sits in the stack, not ranked.</p>
       <div class="tree">
         <div class="branch">
           <h3>Backend</h3>
           <ul>
-            <li data-lv="5"><span>C# / .NET</span></li>
-            <li data-lv="5"><span>API design &amp; integrations</span></li>
-            <li data-lv="4"><span>ASP.NET Core · EF Core</span></li>
-            <li data-lv="4"><span>SQL Server</span></li>
-            <li data-lv="3"><span>GraphQL</span></li>
-            <li data-lv="3"><span>Oracle APEX · PL/SQL</span></li>
-            <li data-lv="2"><span>Java · Spring</span></li>
+            <li><span>C# / .NET</span></li>
+            <li><span>API design &amp; integrations</span></li>
+            <li><span>ASP.NET Core · EF Core</span></li>
+            <li><span>SQL Server</span></li>
+            <li><span>GraphQL</span></li>
+            <li><span>Oracle APEX · PL/SQL</span></li>
+            <li><span>Java · Spring</span></li>
           </ul>
         </div>
         <div class="branch">
           <h3>Frontend</h3>
           <ul>
-            <li data-lv="4"><span>React · TypeScript</span></li>
-            <li data-lv="3"><span>Angular</span></li>
-            <li data-lv="3"><span>HTML · CSS</span></li>
-            <li data-lv="3"><span>Three.js</span></li>
-            <li data-lv="3"><span>Cypress · Jest</span></li>
+            <li><span>React · TypeScript</span></li>
+            <li><span>Angular</span></li>
+            <li><span>HTML · CSS</span></li>
+            <li><span>Three.js</span></li>
+            <li><span>Cypress · Jest</span></li>
           </ul>
         </div>
         <div class="branch">
           <h3>Cloud &amp; Ops</h3>
           <ul>
-            <li data-lv="3"><span>Azure</span></li>
-            <li data-lv="2"><span>Bicep (IaC)</span></li>
-            <li data-lv="2"><span>Azure DevOps · CI/CD</span></li>
-            <li data-lv="3"><span>Git</span></li>
+            <li><span>Azure</span></li>
+            <li><span>Bicep (IaC)</span></li>
+            <li><span>Azure DevOps · CI/CD</span></li>
+            <li><span>Git</span></li>
           </ul>
         </div>
         <div class="branch">
           <h3>Games &amp; Tools</h3>
           <ul>
-            <li data-lv="4"><span>AI-assisted development</span></li>
-            <li data-lv="3"><span>Godot · GDScript</span></li>
-            <li data-lv="3"><span>Python · Raspberry Pi</span></li>
+            <li><span>Godot · GDScript</span></li>
+            <li><span>Python · Raspberry Pi</span></li>
           </ul>
         </div>
       </div>
-      <p class="langs"><b>Languages:</b> Dutch (native) · English (C2) · French (A2 listening and reading, A1 speaking and writing)</p>
+      <p class="langs"><b>How I work:</b> I design and build with AI assistance, then review and test everything that lands.</p>
+      <p class="langs"><b>Languages:</b> Dutch (native) · English (C2) · French (basic)</p>
     </section>
 
     <!-- ACADEMY -->
@@ -312,11 +318,11 @@
       <div class="cta">
         <a class="btn" href="https://be.linkedin.com/in/daan-lemmens" rel="noopener">LinkedIn</a>
         <a class="btn" href="https://github.com/LemmensDaan" rel="noopener">GitHub</a>
-        <a class="btn" href="Daan-Lemmens-CV.pdf">Download CV</a>
+        <button class="btn cv-wip" type="button" title="Still under construction">Download CV <span aria-hidden="true">🚧</span></button>
         <a class="btn" href="mailto:daan.lemmens@hotmail.com">Email</a>
       </div>
 
-      <div class="grid two forms">
+      <div class="forms">
         <form class="quest form" data-kind="contact" action="https://formsubmit.co/daan.lemmens@hotmail.com" method="POST">
           <h3>Send a message</h3>
           <label>Name <input name="name" required autocomplete="name"></label>
@@ -329,8 +335,11 @@
           <p class="status" role="status"></p>
         </form>
 
+      </div>
+
+      <details class="feedback">
+        <summary>Spotted something off on this page?</summary>
         <form class="quest form" data-kind="feedback" action="https://formsubmit.co/daan.lemmens@hotmail.com" method="POST">
-          <h3>How does my page look?</h3>
           <p class="hint">Tell me what you think, good or bad. It lands in my inbox and isn't shown on the page.</p>
           <fieldset class="stars">
             <legend>Rating</legend>
@@ -348,7 +357,7 @@
           <button class="btn primary" type="submit">Submit review</button>
           <p class="status" role="status"></p>
         </form>
-      </div>
+      </details>
     </section>
   </main>
 

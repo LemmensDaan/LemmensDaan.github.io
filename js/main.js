@@ -27,6 +27,7 @@
   }
 
   function draw() {
+    if (document.documentElement.classList.contains('plain')) { requestAnimationFrame(draw); return; } // plain mode: no sky to paint
     ctx.clearRect(0, 0, w, h);
     for (var i = 0; i < stars.length; i++) {
       var s = stars[i];
@@ -64,15 +65,15 @@
   var toastTimer;
 
   var toastQueue = [], toastBusy = false;
-  function notify(msg) {
-    toastQueue.push(msg);
+  function notify(msg, icon) {
+    toastQueue.push((icon || '★') + ' ' + msg);
     if (!toastBusy) nextToast();
   }
   function nextToast() {
     var msg = toastQueue.shift();
     if (!msg) { toastBusy = false; return; }
     toastBusy = true;
-    toast.textContent = '★ ' + msg;
+    toast.textContent = msg;
     toast.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () {
@@ -164,6 +165,27 @@
     if (!panel.hidden && !panel.contains(e.target)) setPanel(false);
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { setPanel(false); setNav(false); } });
+
+  // --- Plain mode: strip the game off, leave the CV -------------------------
+  // The class is set in the <head> from localStorage, so a returning reader never sees the starfield flash.
+  var modeBtn = document.getElementById('mode-btn');
+  if (modeBtn) {
+    var root = document.documentElement;
+    var syncMode = function () {
+      var on = root.classList.contains('plain');
+      modeBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      modeBtn.textContent = on ? 'Full site' : 'Plain CV';
+      modeBtn.title = on ? 'Back to the full site' : 'Plain mode: drop the animations and the game, keep the CV';
+    };
+    syncMode();
+    modeBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var on = root.classList.toggle('plain');
+      try { localStorage.setItem('dl-plain', on ? '1' : '0'); } catch (err) {}
+      if (on) { setPanel(false); setNav(false); }
+      syncMode();
+    });
+  }
 
   var astro = document.getElementById('astro');
   var pokes = 0;
@@ -352,8 +374,21 @@
   });
   setTimeout(function () { unlock('stargazer'); }, 60000);
 
-  document.querySelectorAll('a[href$=".pdf"]').forEach(function (a) {
-    a.addEventListener('click', function () { unlock('cv'); });
+  // The CV is being rewritten, so the download button says so instead of handing over a stale PDF.
+  var CV_LINES = [
+    'CV is in drydock. The astronaut is arguing with the layout.',
+    'Still under construction. Everything worth knowing is on this page anyway.',
+    'Hull plating is off. Ask me and I will send you the current one.',
+    'Nope. Try the mission log.',
+    'Patience, commander.'
+  ];
+  var cvAt = 0;
+  document.querySelectorAll('.cv-wip').forEach(function (b) {
+    b.addEventListener('click', function () {
+      notify(CV_LINES[cvAt % CV_LINES.length], '🚧');
+      cvAt++;
+      unlock('cv');
+    });
   });
 
   if ('IntersectionObserver' in window) {
@@ -369,11 +404,6 @@
     }, { threshold: 0.3 });
     sections.forEach(function (el) { io.observe(el); });
   }
-
-  // --- Skill pips ----------------------------------------------------------
-  document.querySelectorAll('.branch li[data-lv]').forEach(function (li) {
-    li.style.setProperty('--p', li.getAttribute('data-lv'));
-  });
 
   // --- Konami code ---------------------------------------------------------
   // Keyboard: the arrow keys, then B and A. Phone (or mouse): tap the locked secret tile in the achievements panel and
@@ -539,7 +569,7 @@
   var root = document.documentElement;
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function ready() { root.classList.add('ready'); }
-  if (reduce || !document.fonts || !window.Promise) { ready(); return; }
+  if (reduce || root.classList.contains('plain') || !document.fonts || !window.Promise) { ready(); return; }
 
   var SEL = '.hud-brand, .hud-nav a, .hero-text h1, .hero-text .role, .hero-text .lead, .hero-text .btn, .hero .tag';
   var fonts = Promise.all([document.fonts.ready, document.fonts.load('16px Aurebesh')]);
@@ -677,16 +707,58 @@
 })();
 
 // --- Screenshot lightbox ----------------------------------------------------
+// Tiles are read from the DOM every time rather than captured once, so a tile appearing or
+// dropping out never leaves the arrows pointing at the wrong picture.
 (function () {
   'use strict';
   var dlg = document.getElementById('lightbox');
-  var shots = Array.prototype.slice.call(document.querySelectorAll('.shot'));
-  if (!dlg || !shots.length || !dlg.showModal) return; // without <dialog> the thumbnails simply do nothing
+  if (!dlg || !dlg.showModal || !document.querySelector('.shot')) return; // without <dialog> the thumbnails simply do nothing
 
   var img = document.getElementById('lb-img');
   var vid = document.getElementById('lb-vid');
   var cap = document.getElementById('lb-cap');
   var at = 0;
+
+  function shots() {
+    return Array.prototype.slice.call(document.querySelectorAll('.shot:not([hidden])'));
+  }
+
+  // Only the first two thumbnails are on screen; the second one says how many more there are,
+  // and the arrows in the viewer walk through the whole set.
+  function refreshStrip() {
+    var list = shots();
+    list.forEach(function (btn, i) {
+      btn.classList.toggle('extra', i > 1);
+      var badge = btn.querySelector('.more');
+      if (badge) btn.removeChild(badge);
+      var label = btn.querySelector('span');
+      if (label) label.hidden = false;
+      btn.removeAttribute('aria-label');
+    });
+    var rest = list.length - 2;
+    if (rest > 0) {
+      var badge = document.createElement('span');
+      badge.className = 'more';
+      badge.textContent = '+' + rest + ' more';
+      var label = list[1].querySelector('span');
+      if (label) label.hidden = true; // the count replaces the caption on this one
+      list[1].appendChild(badge);
+      list[1].setAttribute('aria-label', 'Open the screenshot viewer: ' + list.length + ' screenshots');
+    }
+  }
+  refreshStrip();
+
+  // A tile may name a file that is not in the folder yet. Rather than hand the reader a broken
+  // frame, it stays hidden until a HEAD request says the file is there.
+  if (window.fetch) {
+    document.querySelectorAll('.shot[hidden][data-src]').forEach(function (btn) {
+      fetch(btn.getAttribute('data-src'), { method: 'HEAD' }).then(function (r) {
+        if (!r.ok) return;
+        btn.hidden = false;
+        refreshStrip();
+      }).catch(function () {});
+    });
+  }
 
   function stopVideo() {
     if (!vid) return;
@@ -697,8 +769,10 @@
   }
 
   function show(i) {
-    at = (i + shots.length) % shots.length;
-    var btn = shots[at];
+    var list = shots();
+    if (!list.length) return;
+    at = (i + list.length) % list.length;
+    var btn = list[at];
     var thumb = btn.querySelector('img');
     var src = btn.getAttribute('data-src');
     if (/\.(mp4|webm)$/i.test(src)) {
@@ -717,25 +791,28 @@
     cap.textContent = btn.getAttribute('data-cap') || '';
   }
 
-  shots.forEach(function (btn, i) {
-    btn.addEventListener('click', function () {
-      show(i);
-      dlg.showModal();
-    });
+  // Delegated, so the index is worked out from the tile that was actually clicked.
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('.shot');
+    if (!btn || btn.hidden) return;
+    var i = shots().indexOf(btn);
+    if (i < 0) return;
+    show(i);
+    dlg.showModal();
   });
 
-  // Only the first two thumbnails are on screen (see .shots in the CSS); the second one says how many
-  // more there are, and the arrows in the viewer walk through the whole set.
-  var hidden = shots.length - 2;
-  if (hidden > 0) {
-    var badge = document.createElement('span');
-    badge.className = 'more';
-    badge.textContent = '+' + hidden + ' more';
-    var label = shots[1].querySelector('span');
-    if (label) label.hidden = true; // the count replaces the caption on this one
-    shots[1].appendChild(badge);
-    shots[1].setAttribute('aria-label', 'Open the screenshot viewer: ' + shots.length + ' screenshots');
+  // Backstop for a file that disappears after the page loaded: drop the tile and renumber.
+  function drop() {
+    var list = shots();
+    var gone = list[at];
+    if (!gone) return;
+    gone.hidden = true;
+    refreshStrip();
+    at = 0;
+    dlg.close();
   }
+  img.addEventListener('error', function () { if (img.getAttribute('src')) drop(); });
+  if (vid) vid.addEventListener('error', function () { if (vid.getAttribute('src')) drop(); });
 
   dlg.querySelector('.lb-close').addEventListener('click', function () { dlg.close(); });
   dlg.querySelector('.lb-prev').addEventListener('click', function () { show(at - 1); });
@@ -749,5 +826,9 @@
     if (e.target === dlg) dlg.close();
   });
   // put focus back on the thumbnail that was opened, so keyboard users don't lose their place
-  dlg.addEventListener('close', function () { stopVideo(); shots[at].focus(); });
+  dlg.addEventListener('close', function () {
+    stopVideo();
+    var list = shots();
+    if (list[at]) list[at].focus();
+  });
 })();
